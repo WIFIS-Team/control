@@ -4,9 +4,9 @@ A repository for all scripts related to controlling WIFIS as well as for data ha
 
 Contributors:
 
-*Suresh Sivanandam
-*Mark Ma
-*Jeff Chilcote
-*Elliot Meyer
-*Jason Leung
+* Suresh Sivanandam
+* Mark Ma
+* Jeff Chilcote
+* Elliot Meyer
+* Jason Leung
 
