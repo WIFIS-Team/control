@@ -39,6 +39,8 @@ def load_FLIDevices():
     foc.home_focuser()
 
     # ??? other default params ???
+	
+    return [cam, foc, flt]
 
 def MainApplicaiton(Frame): 
 
