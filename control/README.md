@@ -1,7 +1,9 @@
-# WIFIS Motor Controller
+# WIFIS System Control Scripts
+
+## WIFIS Motor Controller
 This is a GUI module used to control the motors for WIFIS. Three motors are currently installed.
 
-## How to use
+### How to use
 #### Starting up
 Using the terminal, clone the repository, then navigate to the directory containing the module (under `/wherever_you_keep_your_code/WIFIS-Code/control/`). Enter the command
 
