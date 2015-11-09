@@ -53,8 +53,7 @@ class FLIApplication(_tk.Tk):
             self.cam, self.foc, self.flt = load_FLIDevices()
         except (ImportError, RuntimeError, NameError):
             self.cam, self.foc, self.flt = [[],[],[]]
-            
-        
+ 
         self.initialize()
 
     def initialize(self):
