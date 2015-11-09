@@ -29,3 +29,26 @@ At a given moment, each motor can be in one of four states: **ON**, **MOVE**, **
 Simply close the module – no special commands required`*`. Remember to shut off the power!
 
 `*`*Optional*: you may wish to return the motor to the home position before exiting. This ensures that position 0 – the home position – is in the same place every time the motor is powered on. **There is no way to save the position internally**.
+
+## WIFIS FLI Controller
+
+### Dependencies
+
+* Chimera
+* Chimera-FLI
+* Python-FLI
+* FLI Linux Drivers
+* FLI SDK
+
+Install the FLI Linux Drivers and FLI SDK from FLI first. Then clone the repos of Chimera, Python-FLI, and Chimera-FLI and install in that order. The GUI should then work.
+
+### Starting
+
+To start the GUI navigate to WIFIS-Code/control and run,
+
+> '''python fli_controller.py'''
+
+### Operation Notes
+
+* The focuser has a maximum extent of 7000 steps or roughly a 1/3 inch
+* The CCD can get hot quickly so minimize operation time when not being cooled:
