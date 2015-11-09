@@ -14,7 +14,11 @@ import numpy as np
 from astropy.io import fits
 #import matplotlib.pyplot as mpl
 import Tkinter as _tk
-#import FLI
+
+try:
+    import FLI
+except (ImportError, RuntimeError):
+    print "FLI cannot be imported"
 
 def load_FLIDevices():
     '''Loads the FLI devices into variables and sets the 
@@ -44,16 +48,28 @@ class FLIApplication(_tk.Tk):
     def __init__(self,parent):
         _tk.Tk.__init__(self,parent)
         self.parent = parent
-        #self.cam, self.foc, self.flt = load_FLIDevices()
+        
+        try:
+            self.cam, self.foc, self.flt = load_FLIDevices()
+        except (ImportError, RuntimeError, NameError):
+            self.cam, self.foc, self.flt = [[],[],[]]
+            
+        
         self.initialize()
 
     def initialize(self):
         self.grid()
 
+
         ### Filter Wheel Settings ###
          
+        if len(self.flt) == 0:
+            fltbg = 'red'
+        else:
+            fltbg = 'green'
+         
         label = _tk.Label(self, text='Filter Settings', \
-            anchor="center", fg = "black", bg="white",font=("Helvetica", 20))
+            anchor="center", fg = "black", bg=fltbg,font=("Helvetica", 20))
         label.grid(column=0,row=0,columnspan=2, sticky='EW')
 
         label = _tk.Label(self, text='Filter Position', \
@@ -76,8 +92,14 @@ class FLIApplication(_tk.Tk):
 
 
         ### Focuser Settings ###
+
+        if len(self.foc) == 0:
+            focbg = 'red'
+        else:
+            focbg = 'green'
+
         label = _tk.Label(self, text='Focuser Settings', \
-            anchor="center", fg = "black", bg="white",font=("Helvetica", 20))
+            anchor="center", fg = "black", bg=focbg,font=("Helvetica", 20))
         label.grid(column=2,row=0,columnspan=2, sticky='EW')
 
         label = _tk.Label(self, text='Step Value', \
@@ -107,8 +129,14 @@ class FLIApplication(_tk.Tk):
 
 
         ## Camera Settings
+
+        if len(self.cam) == 0:
+            cambg = 'red'
+        else:
+            cambg = 'green'
+
         label = _tk.Label(self, text='Camera Settings', \
-            anchor="center", fg = "black", bg="white",font=("Helvetica", 20))
+            anchor="center", fg = "black", bg=cambg,font=("Helvetica", 20))
         label.grid(column=1,row=6,columnspan=2, sticky='EW')
 
 
@@ -121,6 +149,7 @@ class FLIApplication(_tk.Tk):
         self.entryExp.grid(column=1, row=8, sticky='EW')
         self.entryExpVariable.set(u"1")
 
+
         label = _tk.Label(self, text='Set Temperature', \
             anchor="center", fg = "black", bg="white",font=("Helvetica", 12))
         label.grid(column=1,row=9, sticky='EW')
@@ -130,15 +159,26 @@ class FLIApplication(_tk.Tk):
         self.entryCamTemp.grid(column=1, row=10, sticky='EW')
         self.entryCamTempVariable.set(u"24")
 
+
         label = _tk.Label(self, text='CCD Temperature', \
             anchor="center", fg = "black", bg="white",font=("Helvetica", 12))
-        label.grid(column=1,row=11, sticky='EW')
+        label.grid(column=0,row=9, sticky='EW')
 
         self.ccdTempText = _tk.StringVar()        
         label = _tk.Label(self, textvariable=self.ccdTempText, \
             anchor="center", fg = "black", bg="white",font=("Helvetica", 12))
-        label.grid(column=1,row=12, sticky='EW')
+        label.grid(column=0,row=10, sticky='EW')
         self.getCCDTemp()
+
+
+        label = _tk.Label(self, text='Image Filepath', \
+            anchor="center", fg = "black", bg="white",font=("Helvetica", 12))
+        label.grid(column=0,row=7, sticky='EW')
+
+        self.entryFilepathVariable = _tk.StringVar()
+        self.entryFilepath = _tk.Entry(self, width=20, textvariable=self.entryFilepathVariable)
+        self.entryFilepath.grid(column=0, row=8, sticky='EW')
+        self.entryFilepathVariable.set(u"/home/UTOPEA/test.fits")
 
 
         _tk.Button(self, text=u"Take Image",command=self.takeImage).grid(column = 2, \
@@ -195,7 +235,9 @@ class FLIApplication(_tk.Tk):
 
     def takeImage(self):
         #self.cam.set_exposure(int(self.entryExpVariable.get()))
-        #self.cam.take_photo()    
+        #img = self.cam.take_photo()  
+        #hdu = fits.PrimaryHDU(hdu)
+        #hdu.writeto(self.entryFilepathVariable.get())
         pass
 
     def setTemperature(self):
