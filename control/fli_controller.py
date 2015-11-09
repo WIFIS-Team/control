@@ -63,11 +63,12 @@ class FLIApplication(_tk.Tk):
  
         self.initialize()
 
-	#Call the functions to continuously update the reporting fields	
-	if 'normal' == self.state():
-		self.writeFilterNum()
-        	self.getCCDTemp()
-		self.writeStepNum()
+	# Call the functions to continuously update the reporting fields	
+	# An error will most likely appear after you close the window as
+	# the mainloop will still attempt to run these commands.
+	self.writeFilterNum()
+       	self.getCCDTemp()
+	self.writeStepNum()
 
     def initialize(self):
         self.grid()
