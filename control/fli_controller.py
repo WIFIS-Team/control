@@ -154,7 +154,8 @@ class FLIApplication(_tk.Tk):
             command=self.stepForward).grid(column = 3, row = 2, sticky='EW')
         _tk.Button(self, text=u"Step Backward",\
             command=self.stepBackward).grid(column = 3, row = 3, sticky='EW')
-
+        _tk.Button(self, text=u"Check Focus",\
+            command=self.checkFocus).grid(column = 3, row = 4, sticky='EW')
 
         ##### Camera Settings #####
 
@@ -225,6 +226,8 @@ class FLIApplication(_tk.Tk):
         #self.resizable(True, False)
 
     ## Functions to perform the above actions ##
+
+    ## Filter Wheel Functions
     def gotoFilter1(self):
         if self.flt:
             self.flt.set_filter_pos(0)
@@ -250,6 +253,8 @@ class FLIApplication(_tk.Tk):
             self.filterNumText.set(str(int(self.flt.get_filter_pos() + 1)))
             self.after(500,self.writeFilterNum)
 
+
+    ## Focuser Functions
     def homeFocuser(self):
         if self.foc:
             self.foc.home_focuser()
@@ -267,6 +272,18 @@ class FLIApplication(_tk.Tk):
             self.stepNumText.set(str(self.foc.get_stepper_position()))
             self.after(500, self.writeStepNum)
 
+    def checkFocus(self):
+        if self.cam and self.foc:
+            self.cam.set_exposure(int(self.entryExpVariable.get()))
+            img = self.cam.take_photo()
+            
+            mpl.close()
+            img_rot = np.rot90(img, k=3)
+            mpl.imshow(img_rot, cmap="Greys")
+            mpl.show()
+
+
+    ## Camera Functions
     def takeImage(self):
         if self.cam:
             self.cam.set_exposure(int(self.entryExpVariable.get()))
