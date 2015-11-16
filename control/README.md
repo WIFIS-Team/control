@@ -95,7 +95,8 @@ The main places that I forsee things going wrong are with the arduinos and the f
 
 In the directory "Calibration_Control" are the codes to be programed into the two arduinos (for the integrating sphere and mirror flippers). Make sure they are both loaded on and onto the right one. 
 
-For the flippers themselves if misbehaving need to be plugged into a computer with windos via usb with the control softwear from Thorlabs installed. They need to have a specific set of instructions told to them to interperet their SMA signals. I'll update what these settings are here later. 
+For the flippers themselves if misbehaving need to be plugged into a computer with windos via usb with the control softwear from Thorlabs installed. Their SMA plug one is set to ‘go to position’ mode with ‘Logic Edge Input (Swap Pos.) ‘ as the digital signal mode. SMA plug two is set to ‘Output: InMotion’ and digital signal mode: ‘Logic Level Output’.  Make sure the 'persistant settings' (or something like that) box is ticked to keep these instructions on the flippers until next plugged in.
+
 
 
 
