@@ -97,6 +97,14 @@ In the directory "Calibration_Control" are the codes to be programed into the tw
 
 For the flippers themselves if misbehaving need to be plugged into a computer with windos via usb with the control softwear from Thorlabs installed. Their SMA plug one is set to ‘go to position’ mode with ‘Logic Edge Input (Swap Pos.) ‘ as the digital signal mode. SMA plug two is set to ‘Output: InMotion’ and digital signal mode: ‘Logic Level Output’.  Make sure the 'persistant settings' (or something like that) box is ticked to keep these instructions on the flippers until next plugged in.
 
+##Temperature and Humidity sensor
+Controls the yocto-meteo sensors
+
+when "temp-humid-yocto_control.py" is run it prints the temperature and humidity as well as a warning if either is outside of a range set in the code, ever x seconds where x is set in the code and saves all readints in a log file.
+
+To use simply run "temp-humid-yocto_control.py" in it's own directory. NOTE: relies on libraries from the yocto-puce website (http://www.yoctopuce.com/EN/products/usb-sensors/yocto-meteo)
+
+
 
 
 
