@@ -1,5 +1,3 @@
-#needs dlipower.py, which can be found in the power_control directory
-
 #gui that controls all of the calibration unit componants
 
 #I tried to make it so that there are a few simple buttons that will do all the stpes needed to take calibration images and that the user can contorl the important componanats seperatly if desired. Also no matter how gui is exited should make sure everything gets turned off
@@ -45,12 +43,26 @@ import dlipower
 
 
 #port for flipper arduino
-fport='/dev/ttyACM1'
+fport='/dev/ttyACM2'
 
-##port for sphere arduino
-#sport='/dev/ttyACM1'
+#port for sphere arduino
+sport='/dev/ttyACM1'
 
 ###################################################
+
+# assign your port and speed for sphere arduino
+ser2 = serial.Serial(sport, 9600)
+print("Reset Sphere Arduino")
+sleep(3) #not sure why does this
+ser2.write(bytes('L'))
+answ=ser2.readline()
+print answ
+if answ.split('\r')[0] != 'OFF': 
+	fport,sport=sport,fport
+	ser2 = serial.Serial(sport, 9600)
+	print("Reset Sphere Arduino")
+	sleep(3)
+	
 
 # assign your port and speed for flipper arduino
 ser = serial.Serial(fport, 9600)
@@ -60,12 +72,7 @@ sleep(3) #not sure why does this
 ser.write(bytes('L'))
 ser.write(bytes('M'))
 
-## assign your port and speed for sphere arduino
-#ser2 = serial.Serial(sport, 9600)
-#print("Reset Sphere Arduino")
-#sleep(3) #not sure why does this
-##put pin to low mode
-#ser2.write(bytes('L'))
+
 
 #connect to both power switches 
 print('Connecting to a DLI PowerSwitch at http://192.168.0.120 and another at http://192.168.0.110 ')
@@ -110,7 +117,22 @@ while out!=None: #loop until out = None if function times out rather than finish
 	#print out[0]
 	out=timeout(clear_out,timeout_duration=5) #read off the board until empty	
 
+#############
+#do same thing for sphere arduion 
+#funtion that reads the board
+def clear_out():
+	a=ser2.readline()
+	#print a[0]
+	return a
+out='0' #initialize loop parameter
 
+while out!=None: #loop until out = None if function times out rather than finishing will return NONE instead of whatever was written on the board
+
+	#print out[0]
+	out=timeout(clear_out,timeout_duration=5) #read off the board until empty	
+
+#put pin to low mode
+ser2.write(bytes('L'))
 
 class MainApplication(Frame): #this class holds all of the gui into and button functions. not really sure why it's a class. Jason did it this way and I copied
 	def __init__(self,master): #setup basic gui stuff
@@ -235,15 +257,20 @@ class MainApplication(Frame): #this class holds all of the gui into and button f
 		self.c6['relief']=RAISED
 		self.update()
 
+#	turn on sphere power
+		switch2[2].state='ON'
+
 	def f2(self): #prepare to take flats
 		if self.c2['relief']==RAISED:
 
 #	move mirror in calibratoin box to right positon
 			self.flip1pos1()
 #	turn on integrating sphere 
-			switch2[2].state='ON'
-			self.status_sphere['text']='ON'
-			self.status_sphere['fg']='green'
+			ser2.readline()
+			ser2.write(bytes('H'))
+			self.status_sphere["text"] = "ON"
+			self.status_sphere["fg"] = "green"
+		
 			
 
 #	put buttons into arangement to show which are possible now
@@ -254,7 +281,8 @@ class MainApplication(Frame): #this class holds all of the gui into and button f
 
 	def f3(self): # done flats
 #	turn off sphere 
-		switch2[2].state='OFF'
+		ser2.readline()
+		ser2.write(bytes('L'))
 		self.status_sphere['text']='OFF'
 		self.status_sphere['fg']='red'
 		
@@ -305,7 +333,8 @@ class MainApplication(Frame): #this class holds all of the gui into and button f
 		switch2[4].state='OFF'
 		self.status_flippers['text']='OFF'
 		self.status_flippers['fg']='red'
-#	turn off plug for sphere 
+#	turn off sphere and plug for sphere 
+		ser2.write(bytes('L'))
 		switch2[2].state='OFF'
 		self.status_sphere['text']='OFF'
 		self.status_sphere['fg']='red'
@@ -324,30 +353,32 @@ class MainApplication(Frame): #this class holds all of the gui into and button f
 #Sphere stuff (button turns sphere on or off and update status), right now using ttl, but might change this to just use the plug)
 ######################################################
 	def toggle_sphere(self):
-		#print 'get the thing'
-		#message=ser2.readline()[0:3]
-		#print message
+		#to toggle by arduino
+		print 'get the thing'
+		message=ser2.readline()[0:3]
+		print message
 
-		#if message=='ON-':
-		#	ser2.write(bytes('L'))
-		#	self.status_sphere["text"] = "OFF"
-		#	self.status_sphere["fg"] = "red"	
-	
-		#if message=='OFF':
-		#	ser2.write(bytes('H'))
-		#	self.status_sphere["text"] = "ON"
-		#	self.status_sphere["fg"] = "green"
-
-		n=2
-		status=switch2[n].state
-		if status=='ON': 
-			switch2[n].state='OFF'
+		if message=='ON-':
+			ser2.write(bytes('L'))
 			self.status_sphere["text"] = "OFF"
-			self.status_sphere["fg"] = "red"
-		else: 
-			switch2[n].state='ON'
+			self.status_sphere["fg"] = "red"	
+	
+		if message=='OFF':
+			ser2.write(bytes('H'))
 			self.status_sphere["text"] = "ON"
-			self.status_sphere["fg"] = "green"	
+			self.status_sphere["fg"] = "green"
+		
+		#to toggle by power
+		#n=2
+		#status=switch2[n].state
+		#if status=='ON': 
+		#	switch2[n].state='OFF'
+		#	self.status_sphere["text"] = "OFF"
+		#	self.status_sphere["fg"] = "red"
+		#else: 
+		#	switch2[n].state='ON'
+		#	self.status_sphere["text"] = "ON"
+		#	self.status_sphere["fg"] = "green"	
 
 
 #Arc Lamp stuff (turns lamp on or off using outlet, updates status) 
