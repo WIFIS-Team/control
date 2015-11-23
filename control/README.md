@@ -93,7 +93,7 @@ Mirror Flippers: the status at the top is if power is being supplied to the flip
 ### If things aren't running correctly:
 The main places that I forsee things going wrong are with the arduinos and the flippers internal programing.
 
-In the directory "Calibration_Control" are the codes to be programed into the two arduinos (for the integrating sphere and mirror flippers). Make sure they are both loaded on and onto the right one. 
+In the directory "Calibration_Control" are the codes to be programed into the two arduinos (for the integrating sphere and mirror flippers). Lines 46 and 49 of the code are the locations where they are mounted. The code should automatically sort it out if the wrong one is given in the wrong line but the path to both arduinos needs to be given in one or the other of these lines. If problems persist makes sure you do have the right path on the right line since this will simplify things. 
 
 For the flippers themselves if misbehaving need to be plugged into a computer with windos via usb with the control softwear from Thorlabs installed. Their SMA plug one is set to ‘go to position’ mode with ‘Logic Edge Input (Swap Pos.) ‘ as the digital signal mode. SMA plug two is set to ‘Output: InMotion’ and digital signal mode: ‘Logic Level Output’.  Make sure the 'persistant settings' (or something like that) box is ticked to keep these instructions on the flippers until next plugged in.
 
