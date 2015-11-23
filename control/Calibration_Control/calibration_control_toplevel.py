@@ -43,7 +43,7 @@ import dlipower
 
 
 #port for flipper arduino
-fport='/dev/ttyACM2'
+fport='/dev/ttyACM0'
 
 #port for sphere arduino
 sport='/dev/ttyACM1'
@@ -206,7 +206,7 @@ class MainApplication(Frame): #this class holds all of the gui into and button f
 		######################################################
 		Label(self, text='Mirror Flippers', font='bold',anchor=W).grid(row=6, column=2, padx=15,sticky="ew")
 		Label(self, text="Status:").grid(row=6, column=3)
-		state=switch2[4].state
+		state=switch2[3].state
 		if state=='OFF': c='red'
 		else: c='green'
 		self.status_flippers=Label(self, text=state, fg =c )
@@ -243,7 +243,7 @@ class MainApplication(Frame): #this class holds all of the gui into and button f
 
 
 #	turn on flipper plug
-		switch2[4].state='ON'
+		switch2[3].state='ON'
 		self.status_flippers['text']='ON'
 		self.status_flippers['fg']='green'
 
@@ -258,7 +258,7 @@ class MainApplication(Frame): #this class holds all of the gui into and button f
 		self.update()
 
 #	turn on sphere power
-		switch2[2].state='ON'
+		switch2[1].state='ON'
 
 	def f2(self): #prepare to take flats
 		if self.c2['relief']==RAISED:
@@ -297,7 +297,7 @@ class MainApplication(Frame): #this class holds all of the gui into and button f
 #	move mirror in calibration box to right position
 			self.flip1pos2()
 #	turn on plug for arc lamp 
-			switch2[3].state='ON'
+			switch2[2].state='ON'
 			self.status_arc['text']='ON'
 			self.status_arc['fg']='green'
 
@@ -308,7 +308,7 @@ class MainApplication(Frame): #this class holds all of the gui into and button f
 
 	def f5(self): #done wavelelgnth
 #	turn of plug for arc lamp 
-		switch2[3].state='OFF'
+		switch2[2].state='OFF'
 		self.status_arc['text']='OFF'
 		self.status_arc['fg']='red'
 
@@ -325,17 +325,17 @@ class MainApplication(Frame): #this class holds all of the gui into and button f
 		self.flip1pos1()
 
 #	turn off arc lamp plugs in case left on
-		switch2[3].state='OFF'
+		switch2[2].state='OFF'
 		self.status_arc['text']='OFF'
 		self.status_arc['fg']='red'
 
 #	turn off plug for flippers
-		switch2[4].state='OFF'
+		switch2[3].state='OFF'
 		self.status_flippers['text']='OFF'
 		self.status_flippers['fg']='red'
 #	turn off sphere and plug for sphere 
 		ser2.write(bytes('L'))
-		switch2[2].state='OFF'
+		switch2[1].state='OFF'
 		self.status_sphere['text']='OFF'
 		self.status_sphere['fg']='red'
 
@@ -384,7 +384,7 @@ class MainApplication(Frame): #this class holds all of the gui into and button f
 #Arc Lamp stuff (turns lamp on or off using outlet, updates status) 
 ######################################################
 	def toggle_arc(self):
-		n=3
+		n=2
 		status=switch2[n].state
 		if status=='ON': 
 			switch2[n].state='OFF'
@@ -479,7 +479,7 @@ ser.write(bytes('M'))
 #ser2.write(bytes('L'))
 
 #make sure all plugs used just for calibration are now off
-switch2[3].state='OFF'
+switch2[1].state='OFF'
 switch2[2].state='OFF'
-switch2[4].state='OFF'
+switch2[3].state='OFF'
 
