@@ -78,12 +78,12 @@ The Gui is split vertically into two halves. The left contains a series of butto
 
 ####The function of the various buttons is descirbed below:
 #####Left Side
-* **Enter Calibration Mode** | This is the first button that should be pushed. Turns on power to the flippers, turns on power to the Integrating sphere (doesn't currently do this but should in a soon updated version), moved the mirror mounted on WIFIS into the calibration position that feeds light from the calibration unit into the instrument and blocks light from the telescope. 
-* **Prepare to take Flats ** | moves the mirror in the calibration box to feed light from the integrating sphere into WIFIS, turns on the integrating sphere (right now does this by the power control, but will update to use ttl)
-* **Finished taking Flats** | turns off the integrating sphere (right now does this by the power control, but will update to use ttl)
+* **Enter Calibration Mode** | This is the first button that should be pushed. Turns on power to the flippers, turns on power to the Integrating sphere, moves the mirror mounted on WIFIS into the calibration position that feeds light from the calibration unit into the instrument and blocks light from the telescope. 
+* **Prepare to take Flats ** | moves the mirror in the calibration box to feed light from the integrating sphere into WIFIS, turns on the integrating sphere using ttl connection
+* **Finished taking Flats** | turns off the integrating sphere using ttl connection
 * **Prepare to take Arcs** | moves mirror in calibration box to feed light from arc lamp into WIFIS, turns arc lamp on.
 * **Finished taking Arcs* | turns the arc lamp off
-* **Exit Calibration Mode** | moves the mirror on WIFIS into observation mode (not blocking light from telescope) makes sure everything else off (flippers, integrating sphere (both at ttl and power) arc lamp)
+* **Exit Calibration Mode** | moves the mirror on WIFIS into observation mode (not blocking light from telescope) makes sure everything else off (flippers, integrating sphere (both at ttl and power), arc lamp)
 
 #####Right Side:
 The 'On/Off' buttons in the Integrating Sphere and Arc Lamp boxes toggle the power to the respective light sources (I will probably add another button to the sphere part to turn the sphere on / off with ttl. The status of each is also displayed (on or off)
