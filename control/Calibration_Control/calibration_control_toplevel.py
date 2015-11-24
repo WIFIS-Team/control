@@ -12,6 +12,7 @@ from time import *
 from Tkinter import *
 import ttk
 import dlipower
+import sys
 
 #GUI OUTLINE
 #button 1: initiate calibration mode
@@ -46,44 +47,12 @@ import dlipower
 fport='/dev/ttyACM0'
 
 #port for sphere arduino
-sport='/dev/ttyACM1'
+sport='/dev/ttyACM3'
 
 ###################################################
 
-# assign your port and speed for sphere arduino
-ser2 = serial.Serial(sport, 9600)
-print("Reset Sphere Arduino")
-sleep(3) #not sure why does this
-ser2.write(bytes('L'))
-answ=ser2.readline()
-print answ
-if answ.split('\r')[0] != 'OFF': 
-	fport,sport=sport,fport
-	ser2 = serial.Serial(sport, 9600)
-	print("Reset Sphere Arduino")
-	sleep(3)
-	
 
-# assign your port and speed for flipper arduino
-ser = serial.Serial(fport, 9600)
-print("Reset Flipper Arduino")
-sleep(3) #not sure why does this
-#put each pin to low mode (won't move flippers if power is off which could cause some problems)
-ser.write(bytes('L'))
-ser.write(bytes('M'))
-
-
-
-#connect to both power switches 
-print('Connecting to a DLI PowerSwitch at http://192.168.0.120 and another at http://192.168.0.110 ')
-switch2 = dlipower.PowerSwitch(hostname="192.168.0.120", userid="admin",password='9876')
-switch1=dlipower.PowerSwitch(hostname="192.168.0.110", userid="admin",password='9876')
-
-
-#first check to make sure there aren't any messages cached on the arduino as this will mess everything up
-#read off until there are none since reading a message when none there causes the code to hang, defined timeout() to stop it after a few seconds 
-
-#I took this form the internet so won't comment it cuase I don't really know how it works
+#I took this form the internet so won't comment it cuase I don't really know how it works stops a function after waiting a time set by timeout_duration. 
 def timeout(func, args=(), kwargs={}, timeout_duration=1, default=None):
     import signal
 
@@ -104,6 +73,65 @@ def timeout(func, args=(), kwargs={}, timeout_duration=1, default=None):
         signal.alarm(0)
 
     return result
+
+
+# assign your port and speed for sphere arduino
+def conect_sphere():
+	try: ser2 = serial.Serial(sport, 9600)
+	except: 
+		print 'Warning: unable to conect to arduino at'+sport
+		try: ser = serial.Serial(fport, 9600)
+		except: print 'Warning: unable to conect to arduino at'+fport
+		sys.exit()
+	return ser2
+ser2=conect_sphere()
+print("Reset Sphere Arduino")
+sleep(3) #not sure why does this
+ser2.write(bytes('L'))
+answ=timeout(ser2.readline)
+#print answ
+if not answ:
+	print 'gave wrong port for sphere arduino, switching ports'
+	fport,sport=sport,fport
+	ser2=conect_sphere()
+	print("Reset Sphere Arduino")
+	sleep(3)
+elif answ.split('\r')[0] != 'OFF':
+	print 'gave wrong port for sphere arduino, switching ports' 
+	fport,sport=sport,fport
+	ser2=conect_sphere()
+	print("Reset Sphere Arduino")
+	sleep(3)
+	
+
+# assign your port and speed for flipper arduino
+try: ser = serial.Serial(fport, 9600)
+except: print 'Warning: unable to conect to arduino at'+fport;sys.exit()
+print("Reset Flipper Arduino")
+sleep(3) #not sure why does this
+#put each pin to low mode (won't move flippers if power is off which could cause some problems)
+ser.write(bytes('L'))
+ser.write(bytes('M'))
+
+
+
+#connect to both power switches 
+print('Connecting to a DLI PowerSwitch at http://192.168.0.120 and another at http://192.168.0.110 ')
+switch2 = dlipower.PowerSwitch(hostname="192.168.0.120", userid="admin",password='9876')
+switch1=dlipower.PowerSwitch(hostname="192.168.0.110", userid="admin",password='9876')
+exit=0
+#see if power switches connected:
+try: c1=switch2[3].state
+except: print 'Warning: power control #2 failed to connect'; exit=1
+
+try: c1=switch1[3].state
+except: print 'Warning: power control #1 failed to connect'; exit=1
+
+if exit==1: sys.exit()
+
+#first check to make sure there aren't any messages cached on the arduino as this will mess everything up
+#read off until there are none since reading a message when none there causes the code to hang, defined timeout() above to stop it after a few seconds 
+
 
 #funtion that reads the board
 def clear_out():
@@ -354,9 +382,9 @@ class MainApplication(Frame): #this class holds all of the gui into and button f
 ######################################################
 	def toggle_sphere(self):
 		#to toggle by arduino
-		print 'get the thing'
+		#print 'get the thing'
 		message=ser2.readline()[0:3]
-		print message
+		#print message
 
 		if message=='ON-':
 			ser2.write(bytes('L'))
