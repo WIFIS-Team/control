@@ -84,7 +84,7 @@ The Gui is split vertically into two halves. The left contains a series of butto
 * **Prepare to take Flats ** | moves the mirror in the calibration box to feed light from the integrating sphere into WIFIS, turns on the integrating sphere using ttl connection
 * **Finished taking Flats** | turns off the integrating sphere using ttl connection
 * **Prepare to take Arcs** | moves mirror in calibration box to feed light from arc lamp into WIFIS, turns arc lamp on.
-* **Finished taking Arcs* | turns the arc lamp off
+* **Finished taking Arcs** | turns the arc lamp off
 * **Exit Calibration Mode** | moves the mirror on WIFIS into observation mode (not blocking light from telescope) makes sure everything else off (flippers, integrating sphere (both at ttl and power), arc lamp)
 
 #####Right Side:
