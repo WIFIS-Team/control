@@ -68,11 +68,13 @@ IMPORTANT NOTE: This code lags a bit so be sure to wait a few seconds after togg
 
 
 ## Calibration Unit Control
-This is a gui that can be used to easily perform calibration functions. Specifically it controls the two flip mirrors in the calibration unit, the arc-lamp and Integrating sphere power supplies and turns on and off the plugs powering each componant as needed. NOTE: currently this turns the sphere on and off by controling the power, I will update this soon to use a second arduino instead. 
+This is a gui that can be used to easily perform calibration functions. Specifically it controls the two flip mirrors in the calibration unit, the arc-lamp and Integrating sphere power supplies and turns on and off the plugs powering each componant as needed. 
 
 ### How to use
 
 Make sure have both ''calibration_control_toplevel.py'' and ''dlipower.py'' (which can be found in the directories 'Calibration_Control' and 'Power_Control' respectively).
+
+Running the python script ''calibration_control_toplevel.py'' should start a gui. If not see the section below on 'if things aren't runnung correctly'.
 
 The Gui is split vertically into two halves. The left contains a series of buttons which should be used to conrol the calibration unit in most scenarios. Buttons apear eather depressed or raised, this shows which buttons should be pushed at any given time. The Right half is used to monitor the status of and control individual elements should this be needed. NOTE: for normal operations one shouldn't need to control elements using the buttons on the right. 
 
@@ -93,7 +95,9 @@ Mirror Flippers: the status at the top is if power is being supplied to the flip
 ### If things aren't running correctly:
 The main places that I forsee things going wrong are with the arduinos and the flippers internal programing.
 
-In the directory "Calibration_Control" are the codes to be programed into the two arduinos (for the integrating sphere and mirror flippers). Lines 46 and 49 of the code are the locations where they are mounted. The code should automatically sort it out if the wrong one is given in the wrong line but the path to both arduinos needs to be given in one or the other of these lines. If problems persist makes sure you do have the right path on the right line since this will simplify things. 
+In the directory "Calibration_Control" are the codes to be programed into the two arduinos (for the integrating sphere and mirror flippers).  Lines 46 and 49 of the code are the locations where they are mounted, if these are wrong the code wil exit without opening the gui and print a warning that states which port did not connect, figure out where the arduino is actully mounted and edit either line 46 or 49 appropriatly. The code should automatically sort it out if the wrong one is given in the wrong line but the path to both arduinos needs to be given in one or the other of these lines. If problems persist makes sure you do have the right path on the right line since this will simplify things. 
+
+The code will also exit without opening the gui if either of the power bars isn't connected properly, a warning will be printed saying which bar didn't connect. If this happens make sure the bar is powered on and the ethernet cables are plugged in at both ends. 
 
 For the flippers themselves if misbehaving need to be plugged into a computer with windos via usb with the control softwear from Thorlabs installed. Their SMA plug one is set to ‘go to position’ mode with ‘Logic Edge Input (Swap Pos.) ‘ as the digital signal mode. SMA plug two is set to ‘Output: InMotion’ and digital signal mode: ‘Logic Level Output’.  Make sure the 'persistant settings' (or something like that) box is ticked to keep these instructions on the flippers until next plugged in.
 
