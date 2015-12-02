@@ -68,6 +68,9 @@ IMPORTANT NOTE: This code lags a bit so be sure to wait a few seconds after togg
 
 
 ## Calibration Unit Control
+
+(for a more detailed set of instructions on the GUI and the mechanical set up of the calibration unit componants see 'calibration_instructions.pdf' in the directory 'Calibration_Control')
+
 This is a gui that can be used to easily perform calibration functions. Specifically it controls the two flip mirrors in the calibration unit, the arc-lamp and Integrating sphere power supplies and turns on and off the plugs powering each componant as needed. 
 
 ### How to use
