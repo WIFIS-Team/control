@@ -9,6 +9,7 @@ from pylab import *
 from Tkinter import *
 from time import *
 import ttk
+from sys import exit
 
 class MainApplication(Frame): #this class holds all of the gui into and button functions. not really sure why it's a class. Jason did it this way and I copied
 	def __init__(self,master): #sets up gui stuff 
@@ -296,7 +297,7 @@ class MainApplication(Frame): #this class holds all of the gui into and button f
 
 	def toggle_plug10(self):
 		self.update()
-		n=1
+		n=2
 		status=switch1[n].state
 		if status=='ON': 
 			switch1[n].state='OFF'
@@ -310,7 +311,7 @@ class MainApplication(Frame): #this class holds all of the gui into and button f
 
 	def toggle_plug11(self):
 		self.update()
-		n=1
+		n=2
 		status=switch1[n].state
 		if status=='ON': 
 			switch1[n].state='OFF'
@@ -336,8 +337,7 @@ class MainApplication(Frame): #this class holds all of the gui into and button f
 #connect to power bars
 print('Connecting to a DLI PowerSwitch at http://192.168.0.120 and another at http://192.168.0.110 ')
 switch2 = dlipower.PowerSwitch(hostname="192.168.0.120", userid="admin",password='9876')
-switch1=dlipower.PowerSwitch(hostname="192.168.0.110", userid="admin",password='9876')
-
+switch1 = dlipower.PowerSwitch(hostname="192.168.0.110", userid="admin",password='9876')
 
 
 root = Tk() #something about gui
