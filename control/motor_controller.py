@@ -14,7 +14,7 @@ from pymodbus.client.sync import ModbusSerialClient as ModbusClient  # initializ
 from Tkinter import *
 
 
-client = ModbusClient(method="rtu", port="/dev/ttyUSB0", stopbits=1, bytesize=8, parity='E', baudrate=9600, timeout=0.1)
+client = ModbusClient(method="rtu", port="/dev/ttyUSB1", stopbits=1, bytesize=8, parity='E', baudrate=9600, timeout=0.1)
 
 # connect to the serial modbus server
 connection = client.connect()

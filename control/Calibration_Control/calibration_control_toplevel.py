@@ -76,15 +76,16 @@ def timeout(func, args=(), kwargs={}, timeout_duration=1, default=None):
 
 
 # assign your port and speed for sphere arduino
-def conect_sphere():
+def connect_sphere():
     try: ser2 = serial.Serial(sport, 9600)
     except: 
         print 'Warning: unable to conect to arduino at'+sport
         try: ser = serial.Serial(fport, 9600)
         except: print 'Warning: unable to conect to arduino at'+fport
-        sys.exit()
+                sys.exit()
     return ser2
-ser2=conect_sphere()
+
+ser2=connect_sphere()
 print("Reset Sphere Arduino")
 sleep(3) #not sure why does this
 ser2.write(bytes('L'))
@@ -93,13 +94,13 @@ answ=timeout(ser2.readline)
 if not answ:
     print 'gave wrong port for sphere arduino, switching ports'
     fport,sport=sport,fport
-    ser2=conect_sphere()
+    ser2=connect_sphere()
     print("Reset Sphere Arduino")
     sleep(3)
 elif answ.split('\r')[0] != 'OFF':
     print 'gave wrong port for sphere arduino, switching ports' 
     fport,sport=sport,fport
-    ser2=conect_sphere()
+    ser2=connect_sphere()
     print("Reset Sphere Arduino")
     sleep(3)
     
