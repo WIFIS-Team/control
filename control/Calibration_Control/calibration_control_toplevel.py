@@ -80,9 +80,10 @@ def connect_sphere():
     try: ser2 = serial.Serial(sport, 9600)
     except: 
         print 'Warning: unable to conect to arduino at'+sport
-        try: ser = serial.Serial(fport, 9600)
-        except: print 'Warning: unable to conect to arduino at'+fport
-                sys.exit()
+        try: ser2 = serial.Serial(fport, 9600)
+        except: 
+            print 'Warning: unable to conect to arduino at'+fport
+            sys.exit()
     return ser2
 
 ser2=connect_sphere()
