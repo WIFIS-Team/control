@@ -303,7 +303,7 @@ class FLIApplication(_tk.Frame):
     
 def run_fli_gui(tkroot):
 
-    root = Toplevel(tkroot)
+    root = _tk.Toplevel(tkroot)
     root.title("WIFIS FLI Controller")
     
     app = FLIApplication(root)

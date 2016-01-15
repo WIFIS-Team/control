@@ -382,12 +382,13 @@ def run_power_gui(mainloop = False):
     switch1 = dlipower.PowerSwitch(hostname="192.168.0.110", userid="admin",\
         password='9876')
     
+    switch1[2].state='ON'
+
     root = Tk() 
     root.title("Power Switch Control") #name gui
     root.geometry("500x375") #gui size
 
     app = MainApplication(root,switch1,switch2) #initialize gui 
-    app.toggle_plug10()
     
     #tell it to start doing the update_labels function after a few seconds
     app.after(5,app.update_labels)  

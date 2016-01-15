@@ -7,18 +7,20 @@ import time
 root,switch1,switch2= pc.run_power_gui()
 
 #Allow for time for arduinos to connect
-time.sleep(3)
+time.sleep(30)
 
-#Turn on Calib GUI
-calib.run_calib_gui(root)
-#Turn on FLI/Guider Control GUI
+#Set up Calib GUI
+ser, ser2 = calib.run_calib_gui(root)
+#Set up FLI/Guider Control GUI
 flic.run_fli_gui(root)
 
 #Run GUIs
 root.mainloop()
 
-#Need code to send off signal to arduino pins 
-
+#Cleaning up
+ser.write(bytes('L'))
+ser.write(bytes('M'))
+switch1[2].state = 'OFF'
 switch2[1].state = 'OFF'
 switch2[2].state = 'OFF'
 switch2[3].state = 'OFF'

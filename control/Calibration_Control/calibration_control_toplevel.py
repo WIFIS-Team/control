@@ -11,6 +11,7 @@
 #but this would probably cause the whole code to lag annoyingly. 
 
 # Miranda Jarvis Oct 2015
+# Updated by Elliot Meyer Jan 2015
 
 from pylab import * 
 import serial
@@ -89,7 +90,7 @@ def clear_out(ser):
     return a
     
 def setup_arduinos(fport,sport):
-    ser2=connect_sphere(fport,sport)
+    ser2 = connect_sphere(fport,sport)
     print("Reset Sphere Arduino")
     sleep(3) #not sure why does this
     ser2.write(bytes('L'))
@@ -123,7 +124,7 @@ def setup_arduinos(fport,sport):
 
     #connect to both power switches 
     print('Connecting to a DLI PowerSwitch at http://192.168.0.120 and'+\
-        'another at http://192.168.0.110 ')
+        ' another at http://192.168.0.110 ')
     switch2 = dlipower.PowerSwitch(hostname="192.168.0.120", userid="admin",\
         password='9876')
     switch1=dlipower.PowerSwitch(hostname="192.168.0.110", userid="admin",\
@@ -163,17 +164,19 @@ def setup_arduinos(fport,sport):
     #put pin to low mode
     ser2.write(bytes('L'))
 
-    return ser, ser2
+    return ser, ser2, switch1, switch2
 
 class MainApplication(Frame): 
     '''this class holds all of the gui into and button functions for the 
     calibration unit control GUI.'''
 
-    def __init__(self,master,ser,ser2): #setup basic gui stuff
+    def __init__(self,master,ser,ser2,switch1,switch2): #setup basic gui stuff
         Frame.__init__(self, master)
         self.grid()
         self.ser = ser
         self.ser2 = ser2
+        self.switch1 = switch1
+        self.switch2 = switch2
         self.create_widgets()
 
 
@@ -272,7 +275,7 @@ class MainApplication(Frame):
         Label(self, text='Mirror Flippers', font='bold',anchor=W).grid(row=6,\
             column=2, padx=15,sticky="ew")
         Label(self, text="Status:").grid(row=6, column=3)
-        state=switch2[3].state
+        state=self.switch2[3].state
         if state=='OFF': c='red'
         else: c='green'
         self.status_flippers=Label(self, text=state, fg =c )
@@ -319,8 +322,8 @@ class MainApplication(Frame):
 
 
 #   turn on flipper plug
-        if switch2[3].state == 'OFF':
-            switch2[3].state='ON'
+        if self.switch2[3].state == 'OFF':
+            self.switch2[3].state='ON'
             self.status_flippers['text']='ON'
             self.status_flippers['fg']='green'
 
@@ -335,7 +338,7 @@ class MainApplication(Frame):
         self.update()
 
 #   turn on sphere power
-        switch2[1].state='ON'
+        self.switch2[1].state='ON'
 
     def f2(self): #prepare to take flats
         if self.c2['relief']==RAISED:
@@ -374,7 +377,7 @@ class MainApplication(Frame):
 #   move mirror in calibration box to right position
             self.flip1pos2()
 #   turn on plug for arc lamp 
-            switch2[2].state='ON'
+            self.switch2[2].state='ON'
             self.status_arc['text']='ON'
             self.status_arc['fg']='green'
 
@@ -385,7 +388,7 @@ class MainApplication(Frame):
 
     def f5(self): #done wavelelgnth
 #   turn of plug for arc lamp 
-        switch2[2].state='OFF'
+        self.switch2[2].state='OFF'
         self.status_arc['text']='OFF'
         self.status_arc['fg']='red'
 
@@ -402,17 +405,17 @@ class MainApplication(Frame):
         self.flip1pos1()
 
 #   turn off arc lamp plugs in case left on
-        switch2[2].state='OFF'
+        self.switch2[2].state='OFF'
         self.status_arc['text']='OFF'
         self.status_arc['fg']='red'
 
 #   turn off plug for flippers
-        switch2[3].state='OFF'
+        self.switch2[3].state='OFF'
         self.status_flippers['text']='OFF'
         self.status_flippers['fg']='red'
 #   turn off sphere and plug for sphere 
         self.ser2.write(bytes('L'))
-        switch2[1].state='OFF'
+        self.switch2[1].state='OFF'
         self.status_sphere['text']='OFF'
         self.status_sphere['fg']='red'
 
@@ -428,13 +431,13 @@ class MainApplication(Frame):
         self.c6['relief']=SUNKEN
 
     def fliponoff(self):
-        status =switch2[3].state
+        status =self.switch2[3].state
         if status=='ON':
-             switch2[3].state='OFF'
+             self.switch2[3].state='OFF'
              self.status_flippers["text"] = "OFF"
              self.status_flippers["fg"] = "red"
         else:
-             switch2[3].state='ON'
+             self.switch2[3].state='ON'
              self.status_flippers["text"] = "ON"
              self.status_flippers["fg"] = "green"
 
@@ -475,13 +478,13 @@ class MainApplication(Frame):
 ######################################################
     def toggle_arc(self):
         n=2
-        status=switch2[n].state
+        status=self.switch2[n].state
         if status=='ON': 
-            switch2[n].state='OFF'
+            self.switch2[n].state='OFF'
             self.status_arc["text"] = "OFF"
             self.status_arc["fg"] = "red"
         else: 
-            switch2[n].state='ON'
+            self.switch2[n].state='ON'
             self.status_arc["text"] = "ON"
             self.status_arc["fg"] = "green"
 
@@ -560,29 +563,16 @@ def run_calib_gui(tkroot,mainloop = False):
     #port for sphere arduino
     sport='/dev/ttyACM1'
 
-    ser,ser2 = setup_arduinos(fport,sport)
+    ser,ser2,switch1,switch2 = setup_arduinos(fport,sport)
     
     print 'activating gui'
     root = Toplevel(tkroot) #gui set up stuff
     root.title("Calibration Unit Control") #gui name
     root.geometry("700x400") #gui size
 
-    app = MainApplication(root,ser,ser2) #set up gui class
+    app = MainApplication(root,ser,ser2,switch1,switch2) #set up gui class
 
-    if mainloop:
-        root.mainloop() #run gui loop
-        
-        #clean up in case user didn't hit exit calibration mode button: 
-        #make sure all arduino pins in low mode
-        ser.write(bytes('L'))
-        ser.write(bytes('M'))
-        #ser2.write(bytes('L'))
-
-        #make sure all plugs used just for calibration are now off
-        switch2[1].state='OFF'
-        switch2[2].state='OFF'
-        switch2[3].state='OFF'
-
+    return ser, ser2
 
 def run_calib_gui_standalone():
 
@@ -592,14 +582,14 @@ def run_calib_gui_standalone():
     #port for sphere arduino
     sport='/dev/ttyACM1'
 
-    setup_arduinos(fport,sport)
+    ser,ser2,switch1,switch2 = setup_arduinos(fport,sport)
     
     print 'activating gui'
     root = Tk() #gui set up stuff
     root.title("Calibration Unit Control") #gui name
     root.geometry("700x400") #gui size
 
-    app = MainApplication(root) #set up gui class
+    app = MainApplication(root,ser,ser2,switch1,switch2) #set up gui class
 
     root.mainloop() #run gui loop
     
@@ -615,5 +605,4 @@ def run_calib_gui_standalone():
     switch2[3].state='OFF'
 
 if __name__ == '__main__':
-    #run_calib_gui()
-    pass
+    run_calib_gui_standalone()
