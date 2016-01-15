@@ -163,13 +163,17 @@ def setup_arduinos(fport,sport):
     #put pin to low mode
     ser2.write(bytes('L'))
 
+    return ser, ser2
+
 class MainApplication(Frame): 
     '''this class holds all of the gui into and button functions for the 
     calibration unit control GUI.'''
 
-    def __init__(self,master): #setup basic gui stuff
+    def __init__(self,master,ser,ser2): #setup basic gui stuff
         Frame.__init__(self, master)
         self.grid()
+        self.ser = ser
+        self.ser2 = ser2
         self.create_widgets()
 
 
@@ -339,8 +343,8 @@ class MainApplication(Frame):
 #   move mirror in calibratoin box to right positon
             self.flip1pos1()
 #   turn on integrating sphere 
-            ser2.readline()
-            ser2.write(bytes('H'))
+            self.ser2.readline()
+            self.ser2.write(bytes('H'))
             self.status_sphere["text"] = "ON"
             self.status_sphere["fg"] = "green"
         
@@ -354,8 +358,8 @@ class MainApplication(Frame):
 
     def f3(self): # done flats
 #   turn off sphere 
-        ser2.readline()
-        ser2.write(bytes('L'))
+        self.ser2.readline()
+        self.ser2.write(bytes('L'))
         self.status_sphere['text']='OFF'
         self.status_sphere['fg']='red'
         
@@ -407,7 +411,7 @@ class MainApplication(Frame):
         self.status_flippers['text']='OFF'
         self.status_flippers['fg']='red'
 #   turn off sphere and plug for sphere 
-        ser2.write(bytes('L'))
+        self.ser2.write(bytes('L'))
         switch2[1].state='OFF'
         self.status_sphere['text']='OFF'
         self.status_sphere['fg']='red'
@@ -441,16 +445,16 @@ class MainApplication(Frame):
     def toggle_sphere(self):
         #to toggle by arduino
         #print 'get the thing'
-        message=ser2.readline()[0:3]
+        message=self.ser2.readline()[0:3]
         #print message
 
         if message=='ON-':
-            ser2.write(bytes('L'))
+            self.ser2.write(bytes('L'))
             self.status_sphere["text"] = "OFF"
             self.status_sphere["fg"] = "red"    
     
         if message=='OFF':
-            ser2.write(bytes('H'))
+            self.ser2.write(bytes('H'))
             self.status_sphere["text"] = "ON"
             self.status_sphere["fg"] = "green"
         
@@ -486,14 +490,14 @@ class MainApplication(Frame):
 #to move to a given positoin and shows when it's moving and when its stopped 
 ######################################################
     def flip1pos2(self):
-        ser.write(bytes('N'))
+        self.ser.write(bytes('N'))
         self.s1['text']='in motion'
         self.s1['fg']='red'
         self.update()
         q='1'
         while q=='1':
-            ser.write(bytes('V'))
-            q=ser.readline()[0]
+            self.ser.write(bytes('V'))
+            q=self.ser.readline()[0]
             sleep(0.1)
         self.s1["text"] = "in position"
         self.s1["fg"] = "green" 
@@ -502,14 +506,14 @@ class MainApplication(Frame):
 
 
     def flip1pos1(self):
-        ser.write(bytes('M'))
+        self.ser.write(bytes('M'))
         self.s1["text"] = "in motion"
         self.s1["fg"] = "red"
         self.update()
         q='1'
         while q=='1':
-            ser.write(bytes('V'))
-            q=ser.readline()[0]
+            self.ser.write(bytes('V'))
+            q=self.ser.readline()[0]
             sleep(0.1)
         self.s1["text"] = "in position"
         self.s1["fg"] = "green"
@@ -518,14 +522,14 @@ class MainApplication(Frame):
 
 
     def flip2pos2(self):
-        ser.write(bytes('H'))
+        self.ser.write(bytes('H'))
         self.s2['text']='in motion'
         self.s2['fg']='red'
         self.update()
         q='1'
         while q=='1':
-            ser.write(bytes('R'))
-            q=ser.readline()[0]
+            self.ser.write(bytes('R'))
+            q=self.ser.readline()[0]
             sleep(0.1)
         self.s2["text"] = "in position"
         self.s2["fg"] = "green" 
@@ -534,21 +538,53 @@ class MainApplication(Frame):
 
 
     def flip2pos1(self):
-        ser.write(bytes('L'))
+        self.ser.write(bytes('L'))
         self.s2["text"] = "in motion"
         self.s2["fg"] = "red"
         self.update()
         q='1'
         while q=='1':
-            ser.write(bytes('R'))
-            q=ser.readline()[0]
+            self.ser.write(bytes('R'))
+            q=self.ser.readline()[0]
             sleep(0.1)
         self.s2["text"] = "in position"
         self.s2["fg"] = "green"
         self.b3['relief']=SUNKEN
         self.b4['relief']=RAISED
 
-def run_calib_gui():
+def run_calib_gui(tkroot,mainloop = False):
+
+    #port for flipper arduino
+    fport='/dev/ttyACM0'
+
+    #port for sphere arduino
+    sport='/dev/ttyACM1'
+
+    ser,ser2 = setup_arduinos(fport,sport)
+    
+    print 'activating gui'
+    root = Toplevel(tkroot) #gui set up stuff
+    root.title("Calibration Unit Control") #gui name
+    root.geometry("700x400") #gui size
+
+    app = MainApplication(root,ser,ser2) #set up gui class
+
+    if mainloop:
+        root.mainloop() #run gui loop
+        
+        #clean up in case user didn't hit exit calibration mode button: 
+        #make sure all arduino pins in low mode
+        ser.write(bytes('L'))
+        ser.write(bytes('M'))
+        #ser2.write(bytes('L'))
+
+        #make sure all plugs used just for calibration are now off
+        switch2[1].state='OFF'
+        switch2[2].state='OFF'
+        switch2[3].state='OFF'
+
+
+def run_calib_gui_standalone():
 
     #port for flipper arduino
     fport='/dev/ttyACM0'
@@ -566,10 +602,8 @@ def run_calib_gui():
     app = MainApplication(root) #set up gui class
 
     root.mainloop() #run gui loop
-
-
+    
     #clean up in case user didn't hit exit calibration mode button: 
-
     #make sure all arduino pins in low mode
     ser.write(bytes('L'))
     ser.write(bytes('M'))
@@ -581,4 +615,5 @@ def run_calib_gui():
     switch2[3].state='OFF'
 
 if __name__ == '__main__':
-    run_calib_gui()
+    #run_calib_gui()
+    pass

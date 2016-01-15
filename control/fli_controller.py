@@ -42,11 +42,11 @@ def load_FLIDevices():
     if foc != None:
         foc.home_focuser()
 
-    # ??? other default params ???
+    # ??? any other default params ???
    
     return [cam, foc, flt]
 
-class FLIApplication(_tk.Tk): 
+class FLIApplication(_tk.Frame): 
     '''Creates the FLI GUI window and also contains a number of 
     functions for controlling the Filter Wheel, Focuser, and
     Camera.'''
@@ -54,7 +54,7 @@ class FLIApplication(_tk.Tk):
     def __init__(self,parent):
         '''Initialize the GUI and load the Devices into memory'''
 
-        _tk.Tk.__init__(self,parent)
+        _tk.Frame.__init__(self,parent)
         self.parent = parent
         
         #Try to import FLI devices
@@ -216,7 +216,8 @@ class FLIApplication(_tk.Tk):
         _tk.Button(self, text=u"Take Image",\
             command=self.takeImage).grid(column = 2, row = 8, sticky='EW')
         _tk.Button(self, text=u"Set Temperature",\
-            command=self.setTemperature).grid(column = 2, row = 10, sticky='EW')
+            command=self.setTemperature).grid(column = 2, row = 10,\
+            sticky='EW')
  
 
         self.grid_columnconfigure(0,weight=1)
@@ -300,10 +301,15 @@ class FLIApplication(_tk.Tk):
             self.ccdTempText.set(str(self.cam.get_temperature()))
             self.after(1000,self.getCCDTemp)        
     
-    
-if __name__ == "__main__":
-    app = FLIApplication(None)
-    app.title("WIFIS FLI Controller")
-    app.mainloop()
+def run_fli_gui(tkroot):
 
+    root = Toplevel(tkroot)
+    root.title("WIFIS FLI Controller")
+    
+    app = FLIApplication(root)
+
+
+
+if __name__ == "__main__":
+    pass
 
