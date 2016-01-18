@@ -286,7 +286,6 @@ def run_motor_gui(tkroot):
 
     app = MainApplication(root,client)
 
-
     return client
 
 if __name__ == '__main__':
