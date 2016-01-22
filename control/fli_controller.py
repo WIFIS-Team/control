@@ -112,7 +112,6 @@ class FLIApplication(_tk.Frame):
         _tk.Button(self, text=u"Filter 5",\
             command=self.gotoFilter5).grid(column = 1,row = 5, sticky='EW')
 
-
         ##### Focuser Settings #####
 
         #Check to see if Focuser is connected & colour label appropriately
@@ -308,8 +307,15 @@ def run_fli_gui(tkroot):
     
     app = FLIApplication(root)
 
+def run_fli_gui_standalone():
 
+    root = _tk.Tk()
+    root.title("WIFIS FLI Controller")
+    
+    app = FLIApplication(root)
+
+    root.mainloop()
 
 if __name__ == "__main__":
-    pass
+    run_fli_gui_standalone()
 

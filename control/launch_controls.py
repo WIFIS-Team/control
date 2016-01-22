@@ -35,7 +35,7 @@ flic.run_fli_gui(root)
 
 #Set up Motor Controller GUI
 print "\nSetting up Motor control GUI...\n"
-client = mot.run_motor_gui(root)
+#client = mot.run_motor_gui(root)
 
 #Mainloop all GUIs
 root.mainloop()
@@ -44,7 +44,7 @@ root.mainloop()
 print "\nShutting down GUIs and cleaning up...\n"
 
 #Closes the underlying socket connection
-client.close()
+#client.close()
 #Writes low signal to Arduino
 ser.write(bytes('L'))
 ser.write(bytes('M'))
