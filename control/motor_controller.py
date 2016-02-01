@@ -25,11 +25,17 @@ class MainApplication(Frame):
 
         self.client = client
         self.status1 = self.status2 = self.status3 = None
+        '''self.position1 = StringVar()
+        self.position2 = StringVar()
+        self.position3 = StringVar()
+        self.position1.set(None)
+        self.position2.set(None)
+        self.position3.set(None)'''
         self.position1 = self.position2 = self.position3 = None
         self.motor_position = 0
         self.speed1 = self.speed2 = self.speed3 = None
         self.motor_speed1 = StringVar()
-        self.motor_speed1.set(1000)
+        self.motor_speed1.set(100)
         self.motor_speed2 = StringVar()
         self.motor_speed2.set(1000)
         self.motor_speed3 = StringVar()
