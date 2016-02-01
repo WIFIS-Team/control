@@ -34,7 +34,7 @@ class MainApplication(Frame):
         self.motor_speed2.set(1000)
         self.motor_speed3 = StringVar()
         self.motor_speed3.set(1000)
-#        self.step1 = self.step2 = self.step3 = None
+        self.step1 = self.step2 = self.step3 = None
         self.motor_step1 = StringVar()
         self.motor_step1.set(100)
         self.motor_step2 = StringVar()
