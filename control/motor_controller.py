@@ -25,18 +25,24 @@ class MainApplication(Frame):
 
         self.client = client
         self.status1 = self.status2 = self.status3 = None
-        self.position1 = self.position2 = self.position3 = None
+        #self.position1 = self.position2 = self.position3 = None
+        self.pos1 = StringVar()
+        self.pos2 = StringVar()
+        self.pos3 = StringVar()
+        self.pos1.set(0)
+        self.pos2.set(0)
+        self.pos3.set(0)
         self.motor_position = 0
         self.speed1 = self.speed2 = self.speed3 = None
         self.motor_speed1 = StringVar()
-        self.motor_speed1.set(1000)
+        self.motor_speed1.set(10)
         self.motor_speed2 = StringVar()
-        self.motor_speed2.set(1000)
+        self.motor_speed2.set(500)
         self.motor_speed3 = StringVar()
         self.motor_speed3.set(1000)
         self.step1 = self.step2 = self.step3 = None
         self.motor_step1 = StringVar()
-        self.motor_step1.set(100)
+        self.motor_step1.set(10)
         self.motor_step2 = StringVar()
         self.motor_step2.set(100)
         self.motor_step3 = StringVar()
@@ -84,11 +90,11 @@ class MainApplication(Frame):
 
         Label(self, text="Position:").grid(row=2, column=0, sticky=W)
 
-        self.position1 = Label(self, text="")
+        self.position1 = Label(self, textvariable=self.pos1)
         self.position1.grid(row=3, column=0)
-        self.position2 = Label(self, text="")
+        self.position2 = Label(self, textvariable=self.pos2)
         self.position2.grid(row=3, column=1)
-        self.position3 = Label(self, text="")
+        self.position3 = Label(self, textvariable=self.pos3)
         self.position3.grid(row=3, column=2)
 
         Label(self, text="Speed:").grid(row=4, column=0, sticky=W)
@@ -141,8 +147,11 @@ class MainApplication(Frame):
         self.motor_position = (temp.registers[0] << 16) + temp.registers[1]
         if self.motor_position >= 2**31:
             self.motor_position -= 2**32
-        position_labels = [self.position1, self.position2, self.position3]
-        position_labels[unit-1]["text"] = str(self.motor_position)
+        #position_labels = [self.position1, self.position2, self.position3]
+        #position_labels[unit-1]["text"] = str(self.motor_position)
+        position_labels = [self.pos1,self.pos2,self.pos3]
+        poslabel = position_labels[unit-1]
+        poslabel.set(str(self.motor_position))
 
     def stepping_operation(self, value, unit):
         step = int(value)
@@ -155,7 +164,8 @@ class MainApplication(Frame):
         status_labels = [self.status1, self.status2, self.status3]
         status_labels[unit-1]["text"] = "MOVE"
         self.client.write_register(0x001E, 0x2101, unit=unit)
-
+        self.get_position(unit)
+        
     # Motor 1 methods
     def m1_speed(self):
         speed = int(self.motor_speed1.get())
@@ -251,7 +261,7 @@ class MainApplication(Frame):
 
 def run_motor_gui_standalone():
 
-    client = ModbusClient(method="rtu", port="/dev/ttyUSB0", stopbits=1, \
+    client = ModbusClient(method="rtu", port="/dev/ttyUSB2", stopbits=1, \
         bytesize=8, parity='E', baudrate=9600, timeout=0.1)
 
     # connect to the serial modbus server
@@ -272,7 +282,7 @@ def run_motor_gui_standalone():
 
 def run_motor_gui(tkroot):
 
-    client = ModbusClient(method="rtu", port="/dev/ttyUSB0", stopbits=1, \
+    client = ModbusClient(method="rtu", port="/dev/ttyUSB2", stopbits=1, \
         bytesize=8, parity='E', baudrate=9600, timeout=0.1)
 
     # connect to the serial modbus server
