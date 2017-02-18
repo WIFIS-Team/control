@@ -10,6 +10,7 @@ This is a GUI module used to control the motors for WIFIS
 """
 
 # initialize a serial RTU client instance
+from __future__ import print_function
 from pymodbus.client.sync import ModbusSerialClient as ModbusClient  
 
 from Tkinter import *
@@ -145,6 +146,7 @@ class MainApplication(Frame):
     def get_position(self, unit):
         temp = self.client.read_holding_registers(0x0118, 2, unit=unit)
         self.motor_position = (temp.registers[0] << 16) + temp.registers[1]
+        print(self.motor_position)
         if self.motor_position >= 2**31:
             self.motor_position -= 2**32
         #position_labels = [self.position1, self.position2, self.position3]
@@ -261,13 +263,12 @@ class MainApplication(Frame):
 
 def run_motor_gui_standalone():
 
-    client = ModbusClient(method="rtu", port="/dev/ttyUSB2", stopbits=1, \
+    client = ModbusClient(method="rtu", port="/dev/ttyUSB0", stopbits=1, \
         bytesize=8, parity='E', baudrate=9600, timeout=0.1)
-
+    
     # connect to the serial modbus server
     connection = client.connect()
     print("Connection = " + str(connection))
-    
     # Create and set up the GUI object
     root = Tk()
     root.title("WIFIS Motor Controller")
@@ -282,7 +283,7 @@ def run_motor_gui_standalone():
 
 def run_motor_gui(tkroot):
 
-    client = ModbusClient(method="rtu", port="/dev/ttyUSB2", stopbits=1, \
+    client = ModbusClient(method="rtu", port="/dev/ttyUSB1", stopbits=1, \
         bytesize=8, parity='E', baudrate=9600, timeout=0.1)
 
     # connect to the serial modbus server

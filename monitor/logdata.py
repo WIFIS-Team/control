@@ -2,8 +2,11 @@ import serial
 import time
 import csv
 
+# Open serial ports for Lakeshore temperature controller
+# and MKS vacuum sensor
 def open_serial_port(ser_temp,ser_pressure):
-    ser_temp.port = "/dev/ttyUSB0"
+    # Open serial port for Lakeshore
+    ser_temp.port = "/dev/ttyUSB2"
     ser_temp.baudrate = 57600 
     ser_temp.bytesize = serial.SEVENBITS
     ser_temp.stopbits=serial.STOPBITS_ONE
@@ -14,8 +17,9 @@ def open_serial_port(ser_temp,ser_pressure):
         print 'Serial port opened - Lakeshore'
     else:
         print 'Unable to open serial port - Lakeshore'
-        
-    ser_pressure.port = '/dev/ttyUSB1'
+    
+    # Open serial port for MKS
+    ser_pressure.port = '/dev/ttyUSB0'
     ser_pressure.baudrate = 9600
     ser_pressure.timeout=0
     ser_pressure.open()
@@ -25,6 +29,7 @@ def open_serial_port(ser_temp,ser_pressure):
     else:
         print 'Unable to open serial port - MKS'
 
+# Send read pressure command to MKS and return pressure
 def read_pressure(ser_pressure):
     ser_pressure.write('@253PR4?;FF')
     time.sleep(1)
@@ -35,6 +40,7 @@ def read_pressure(ser_pressure):
     
     return pressure
 
+# Function for sending command packet to Lakeshore controller
 def sendPacket(ser_temp,packetString): #send query message to T-controller and wait for response
     ser_temp.write(packetString)
     time.sleep(0.05)
@@ -42,6 +48,12 @@ def sendPacket(ser_temp,packetString): #send query message to T-controller and w
     time.sleep(0.05)
     return response
 
+# Read five temperatures from the Lakeshore controller
+# A - Detector #1
+# B - Detector #2
+# C - ASIC board temperature
+# D1 - Optics plate temperature
+# D2 - Cold plate temperature
 def read_temperature(ser_temp):  
     currentTime = time.time()
 
@@ -57,18 +69,22 @@ def read_temperature(ser_temp):
     
     return returnedString
 
+# Main program, open serial ports
 ser_temp = serial.Serial()
 ser_pressure = serial.Serial()
 
 open_serial_port(ser_temp,ser_pressure)
 
-fname = 'warmup02062016.csv'
+# Output filesname
+fname = 'cooldown02172017.csv'
+# File header
 outFileHeader = ['#Time Stamp','seconds since epoch', 'Input A',  'Input B','Input C','Input D1', 'Input D2','Pressure']
 
 f = open(fname, 'wb')
 outData = csv.writer(f, dialect='excel')
 outData.writerow(outFileHeader)
 
+# Run data ACQ loop
 while(True):
     outval = read_temperature(ser_temp)
     outval.append(read_pressure(ser_pressure))

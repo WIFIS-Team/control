@@ -30,7 +30,7 @@ def smooth(x,window_len=11,window='hanning'):
 plt.close('all')
 plt.ion()
 
-data = np.loadtxt('toronto_cooldown.csv',delimiter=',',usecols=(1,2,3,4))
+data = np.loadtxt('cooldown02172017.csv',delimiter=',',usecols=(1,2,3,7))
 
 # 1437076800.928176 July 16/2015 4:00 pm refill
 
