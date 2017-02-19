@@ -25,7 +25,13 @@ class MainApplication(Frame):
         self.grid()
 
         self.client = client
-        self.status1 = self.status2 = self.status3 = None
+        self.status1 = StringVar()
+        self.status2 = StringVar()
+        self.status3 = StringVar()
+        self.status1.set("Off")
+        self.status2.set("Off")
+        self.status3.set("Off")
+        #self.status1 = self.status2 = self.status3 = None
         #self.position1 = self.position2 = self.position3 = None
         self.pos1 = StringVar()
         self.pos2 = StringVar()
@@ -37,10 +43,13 @@ class MainApplication(Frame):
         self.speed1 = self.speed2 = self.speed3 = None
         self.motor_speed1 = StringVar()
         self.motor_speed1.set(10)
+        self.m1_speed()
         self.motor_speed2 = StringVar()
         self.motor_speed2.set(500)
+        self.m1_speed()
         self.motor_speed3 = StringVar()
-        self.motor_speed3.set(1000)
+        self.motor_speed3.set(10)
+        self.m1_speed()
         self.step1 = self.step2 = self.step3 = None
         self.motor_step1 = StringVar()
         self.motor_step1.set(10)
@@ -51,8 +60,8 @@ class MainApplication(Frame):
 
         self.create_widgets()
 
-        for i in range(3):
-            self.get_position(i+1)
+        self.get_position()
+        self.update_status()
 
     def create_widgets(self):
         """
@@ -78,16 +87,16 @@ class MainApplication(Frame):
         
         Off turns the motor off.
         """
-        Label(self, text="Motor 1").grid(row=0, column=0, padx=15)
-        Label(self, text="Motor 2").grid(row=0, column=1, padx=15)
-        Label(self, text="Motor 3").grid(row=0, column=2, padx=15)
+        Label(self, text="Focus (1)").grid(row=0, column=0, padx=15)
+        Label(self, text="Filter (2)").grid(row=0, column=1, padx=15)
+        Label(self, text="Grating (3)").grid(row=0, column=2, padx=15)
 
-        self.status1 = Label(self, text="OFF")
-        self.status1.grid(row=1, column=0)
-        self.status2 = Label(self, text="OFF")
-        self.status2.grid(row=1, column=1)
-        self.status3 = Label(self, text="OFF")
-        self.status3.grid(row=1, column=2)
+        self.status1label = Label(self, textvariable=self.status1)
+        self.status1label.grid(row=1, column=0)
+        self.status2label = Label(self, textvariable=self.status2)
+        self.status2label.grid(row=1, column=1)
+        self.status3label = Label(self, textvariable=self.status3)
+        self.status3label.grid(row=1, column=2)
 
         Label(self, text="Position:").grid(row=2, column=0, sticky=W)
 
@@ -100,11 +109,21 @@ class MainApplication(Frame):
 
         Label(self, text="Speed:").grid(row=4, column=0, sticky=W)
 
-        self.speed1 = Entry(self, textvariable=self.motor_speed1, width=5)
+        #Uncomment this section and the "Set" buttons below to enable speed setting
+        #Alternatively you can manually set the speeds at startup in __init__
+        #self.speed1 = Entry(self, textvariable=self.motor_speed1, width=5)
+        #self.speed1.grid(row=5, column=0)
+        #self.speed2 = Entry(self, textvariable=self.motor_speed2, width=5)
+        #self.speed2.grid(row=5, column=1)
+        #self.speed3 = Entry(self, textvariable=self.motor_speed3, width=5)
+        #self.speed3.grid(row=5, column=2)
+
+        #Comment this section if you uncomment the above section
+        self.speed1 = Label(self, textvariable=self.motor_speed1)
         self.speed1.grid(row=5, column=0)
-        self.speed2 = Entry(self, textvariable=self.motor_speed2, width=5)
+        self.speed2 = Label(self, textvariable=self.motor_speed2)
         self.speed2.grid(row=5, column=1)
-        self.speed3 = Entry(self, textvariable=self.motor_speed3, width=5)
+        self.speed3 = Label(self, textvariable=self.motor_speed3)
         self.speed3.grid(row=5, column=2)
 
         Label(self, text="Step:").grid(row=7, column=0, sticky=W)
@@ -117,7 +136,7 @@ class MainApplication(Frame):
         self.step3.grid(row=8, column=2)
 
         # Motor 1 buttons
-        Button(self, text="Set", command=self.m1_speed, width=5).grid(row=6, column=0)
+        #Button(self, text="Set", command=self.m1_speed, width=5).grid(row=6, column=0)
         Button(self, text="Step", command=self.m1_step, width=5).grid(row=9, column=0)
         Button(self, text="Home", command=self.m1_home, width=5).grid(row=10, column=0)
         Button(self, text="Fwd", command=self.m1_forward, width=5).grid(row=11, column=0)
@@ -126,7 +145,7 @@ class MainApplication(Frame):
         Button(self, text="Off", command=self.m1_off, width=5).grid(row=14, column=0)
 
         # Motor 2 buttons
-        Button(self, text="Set", command=self.m2_speed, width=5).grid(row=6, column=1)
+        #Button(self, text="Set", command=self.m2_speed, width=5).grid(row=6, column=1)
         Button(self, text="Step", command=self.m2_step, width=5).grid(row=9, column=1)
         Button(self, text="Home", command=self.m2_home, width=5).grid(row=10, column=1)
         Button(self, text="Fwd", command=self.m2_forward, width=5).grid(row=11, column=1)
@@ -135,7 +154,7 @@ class MainApplication(Frame):
         Button(self, text="Off", command=self.m2_off, width=5).grid(row=14, column=1)
 
         # Motor 3 buttons
-        Button(self, text="Set", command=self.m3_speed, width=5).grid(row=6, column=2)
+        #Button(self, text="Set", command=self.m3_speed, width=5).grid(row=6, column=2)
         Button(self, text="Step", command=self.m3_step, width=5).grid(row=9, column=2)
         Button(self, text="Home", command=self.m3_home, width=5).grid(row=10, column=2)
         Button(self, text="Fwd", command=self.m3_forward, width=5).grid(row=11, column=2)
@@ -143,17 +162,27 @@ class MainApplication(Frame):
         Button(self, text="Stop", command=self.m3_stop, width=5).grid(row=13, column=2)
         Button(self, text="Off", command=self.m3_off, width=5).grid(row=14, column=2)
 
-    def get_position(self, unit):
-        temp = self.client.read_holding_registers(0x0118, 2, unit=unit)
-        self.motor_position = (temp.registers[0] << 16) + temp.registers[1]
-        print(self.motor_position)
-        if self.motor_position >= 2**31:
-            self.motor_position -= 2**32
-        #position_labels = [self.position1, self.position2, self.position3]
-        #position_labels[unit-1]["text"] = str(self.motor_position)
-        position_labels = [self.pos1,self.pos2,self.pos3]
-        poslabel = position_labels[unit-1]
-        poslabel.set(str(self.motor_position))
+    def get_position(self):
+        for i in range(3):
+            unit = i + 1
+            temp = self.client.read_holding_registers(0x0118, 2, unit=unit)
+            self.motor_position = (temp.registers[0] << 16) + temp.registers[1]
+            if self.motor_position >= 2**31:
+                self.motor_position -= 2**32
+            #position_labels = [self.position1, self.position2, self.position3]
+            #position_labels[unit-1]["text"] = str(self.motor_position)
+            position_labels = [self.pos1,self.pos2,self.pos3]
+            poslabel = position_labels[unit-1]
+            poslabel.set(str(self.motor_position))
+        self.after(100, self.get_position)
+
+    def update_status(self):
+        #Returns 1025 if moving, 43009 if home, 8193 if stopped and not home, 
+        #32768 if not operating/communicating (?) 
+        for unit in range(1,4):
+            resp = self.client.read_holding_registers(0x0020,1, unit=unit)
+            print(resp.registers[0], unit) 
+        self.after(1000, self.update_status)
 
     def stepping_operation(self, value, unit):
         step = int(value)
@@ -164,9 +193,10 @@ class MainApplication(Frame):
         self.client.write_register(0x001E, 0x2000, unit=unit)
         self.client.write_registers(0x0402, [upper, lower], unit=unit)
         status_labels = [self.status1, self.status2, self.status3]
-        status_labels[unit-1]["text"] = "MOVE"
+        status_labels[unit-1].set("MOVE")
         self.client.write_register(0x001E, 0x2101, unit=unit)
-        self.get_position(unit)
+        self.client.write_register(0x001E, 0x2001, unit=unit)
+        #self.get_position(unit)
         
     # Motor 1 methods
     def m1_speed(self):
@@ -180,24 +210,24 @@ class MainApplication(Frame):
 
     def m1_home(self):
         self.client.write_register(0x001E, 0x2800, unit=0x01)
-        self.status1["text"] = "HOME"
+        self.status1.set("HOME")
 
     def m1_forward(self):
         self.client.write_register(0x001E, 0x2201, unit=0x01)
-        self.status1["text"] = "MOVE"
+        self.status1.set("MOVE")
 
     def m1_reverse(self):
         self.client.write_register(0x001E, 0x2401, unit=0x01)
-        self.status1["text"] = "MOVE"
+        self.status1.set("MOVE")
 
     def m1_stop(self):
         self.client.write_register(0x001E, 0x2000, unit=0x01)
-        self.status1["text"] = "ON"
+        self.status1["text"].set("ON")
         self.get_position(unit=0x01)
 
     def m1_off(self):
         self.client.write_register(0x001E, 0x0000, unit=0x01)
-        self.status1["text"] = "OFF"
+        self.status1.set("OFF")
 
     # Motor 2 methods
     def m2_speed(self):
@@ -211,24 +241,24 @@ class MainApplication(Frame):
 
     def m2_home(self):
         self.client.write_register(0x001E, 0x2800, unit=0x02)
-        self.status2["text"] = "HOME"
+        self.status2.set("HOME")
 
     def m2_forward(self):
         self.client.write_register(0x001E, 0x2201, unit=0x02)
-        self.status2["text"] = "MOVE"
+        self.status2.set("MOVE")
 
     def m2_reverse(self):
         self.client.write_register(0x001E, 0x2401, unit=0x02)
-        self.status2["text"] = "MOVE"
+        self.status2.set("MOVE")
 
     def m2_stop(self):
         self.client.write_register(0x001E, 0x2000, unit=0x02)
-        self.status2["text"] = "ON"
+        self.status2.set("ON")
         self.get_position(unit=0x02)
 
     def m2_off(self):
         self.client.write_register(0x001E, 0x0000, unit=0x02)
-        self.status2["text"] = "OFF"
+        self.status2.set("OFF")
 
     # Motor 3 methods
     def m3_speed(self):
@@ -242,24 +272,24 @@ class MainApplication(Frame):
 
     def m3_home(self):
         self.client.write_register(0x001E, 0x2800, unit=0x03)
-        self.status3["text"] = "HOME"
+        self.status3.set("HOME")
 
     def m3_forward(self):
         self.client.write_register(0x001E, 0x2201, unit=0x03)
-        self.status3["text"] = "MOVE"
+        self.status3.set("MOVE")
 
     def m3_reverse(self):
         self.client.write_register(0x001E, 0x2401, unit=0x03)
-        self.status3["text"] = "MOVE"
+        self.status3.set("MOVE")
 
     def m3_stop(self):
         self.client.write_register(0x001E, 0x2000, unit=0x03)
-        self.status3["text"] = "ON"
+        self.status3.set("ON")
         self.get_position(unit=0x03)
 
     def m3_off(self):
         self.client.write_register(0x001E, 0x0000, unit=0x03)
-        self.status3["text"] = "OFF"
+        self.status3.set("OFF")
 
 def run_motor_gui_standalone():
 
@@ -272,7 +302,7 @@ def run_motor_gui_standalone():
     # Create and set up the GUI object
     root = Tk()
     root.title("WIFIS Motor Controller")
-    root.geometry("250x375")
+    root.geometry("275x375")
 
     app = MainApplication(root,client)
 

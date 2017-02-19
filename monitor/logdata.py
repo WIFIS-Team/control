@@ -19,7 +19,7 @@ def open_serial_port(ser_temp,ser_pressure):
         print 'Unable to open serial port - Lakeshore'
     
     # Open serial port for MKS
-    ser_pressure.port = '/dev/ttyUSB0'
+    ser_pressure.port = '/dev/ttyUSB3'
     ser_pressure.baudrate = 9600
     ser_pressure.timeout=0
     ser_pressure.open()
@@ -76,7 +76,7 @@ ser_pressure = serial.Serial()
 open_serial_port(ser_temp,ser_pressure)
 
 # Output filesname
-fname = 'cooldown02172017.csv'
+fname = 'cooldown02182017.csv'
 # File header
 outFileHeader = ['#Time Stamp','seconds since epoch', 'Input A',  'Input B','Input C','Input D1', 'Input D2','Pressure']
 
