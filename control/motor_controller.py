@@ -137,7 +137,7 @@ class MainApplication(Frame):
 
         # Motor 1 buttons
         #Button(self, text="Set", command=self.m1_speed, width=5).grid(row=6, column=0)
-        Button(self, text="Step", command=self.m1_step, width=5).grid(row=9, column=0)
+        Button(self, text="GoTo", command=self.m1_step, width=5).grid(row=9, column=0)
         Button(self, text="Home", command=self.m1_home, width=5).grid(row=10, column=0)
         Button(self, text="Fwd", command=self.m1_forward, width=5).grid(row=11, column=0)
         Button(self, text="Rev", command=self.m1_reverse, width=5).grid(row=12, column=0)
@@ -146,7 +146,7 @@ class MainApplication(Frame):
 
         # Motor 2 buttons
         #Button(self, text="Set", command=self.m2_speed, width=5).grid(row=6, column=1)
-        Button(self, text="Step", command=self.m2_step, width=5).grid(row=9, column=1)
+        Button(self, text="GoTo", command=self.m2_step, width=5).grid(row=9, column=1)
         Button(self, text="Home", command=self.m2_home, width=5).grid(row=10, column=1)
         Button(self, text="Fwd", command=self.m2_forward, width=5).grid(row=11, column=1)
         Button(self, text="Rev", command=self.m2_reverse, width=5).grid(row=12, column=1)
@@ -155,7 +155,7 @@ class MainApplication(Frame):
 
         # Motor 3 buttons
         #Button(self, text="Set", command=self.m3_speed, width=5).grid(row=6, column=2)
-        Button(self, text="Step", command=self.m3_step, width=5).grid(row=9, column=2)
+        Button(self, text="GoTo", command=self.m3_step, width=5).grid(row=9, column=2)
         Button(self, text="Home", command=self.m3_home, width=5).grid(row=10, column=2)
         Button(self, text="Fwd", command=self.m3_forward, width=5).grid(row=11, column=2)
         Button(self, text="Rev", command=self.m3_reverse, width=5).grid(row=12, column=2)
@@ -179,9 +179,22 @@ class MainApplication(Frame):
     def update_status(self):
         #Returns 1025 if moving, 43009 if home, 8193 if stopped and not home, 
         #32768 if not operating/communicating (?) 
+        statuses = [self.status1, self.status2, self.status3]
         for unit in range(1,4):
             resp = self.client.read_holding_registers(0x0020,1, unit=unit)
-            print(resp.registers[0], unit) 
+            bin_resp = '{0:016b}'.format(resp.registers[0])
+
+            if bin_resp[5] == '1' and bin_resp[2] == '0':
+                statuses[unit-1].set("MOVING")
+            elif bin_resp[4] == '1' and bin_resp[2] == '1':
+                statuses[unit-1].set("HOME")
+            elif bin_resp[4] == 'r' and bin_resp[2] == '1':
+                statuses[unit-1].set("READY")
+            elif bin_resp[0] == '1' and bin_resp[2] == '0':
+                statuses[unit-1].set("OFF/ERR")
+            else:
+                statuses[unit-1].set("UNKN")
+
         self.after(1000, self.update_status)
 
     def stepping_operation(self, value, unit):
@@ -291,6 +304,10 @@ class MainApplication(Frame):
         self.client.write_register(0x001E, 0x0000, unit=0x03)
         self.status3.set("OFF")
 
+def on_closing():
+    if messagebox.askokcancel("Quit", "Do you want to quit?"):
+        root.destroy()
+
 def run_motor_gui_standalone():
 
     client = ModbusClient(method="rtu", port="/dev/ttyUSB0", stopbits=1, \
@@ -303,6 +320,7 @@ def run_motor_gui_standalone():
     root = Tk()
     root.title("WIFIS Motor Controller")
     root.geometry("275x375")
+    root.protocol("WM_DELETE_WINDOW", on_closing)
 
     app = MainApplication(root,client)
 
@@ -324,6 +342,7 @@ def run_motor_gui(tkroot):
     root = Toplevel(tkroot)
     root.title("WIFIS Motor Controller")
     root.geometry("250x375")
+    root.protocol("WM_DELETE_WINDOW", on_closing)
 
     app = MainApplication(root,client)
 
