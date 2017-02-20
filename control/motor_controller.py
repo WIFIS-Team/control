@@ -142,7 +142,7 @@ class MainApplication(Frame):
         # Motor 1 buttons
         #Button(self, text="Set", command=self.m1_speed, width=5).grid(row=6, column=0)
         Button(self, text="GoTo", command=self.m1_step, width=5).grid(row=9, column=0)
-        Button(self, text="Home", command=self.m1_home, width=5).grid(row=10, column=0)
+        Button(self, text="Home", command=lambda: self.homing_operation(0x01), width=5).grid(row=10, column=0)
         Button(self, text="Fwd", command=self.m1_forward, width=5).grid(row=11, column=0)
         Button(self, text="Rev", command=self.m1_reverse, width=5).grid(row=12, column=0)
         Button(self, text="Stop", command=self.m1_stop, width=5).grid(row=13, column=0)
@@ -151,7 +151,7 @@ class MainApplication(Frame):
         # Motor 2 buttons
         #Button(self, text="Set", command=self.m2_speed, width=5).grid(row=6, column=1)
         Button(self, text="GoTo", command=self.m2_step, width=5).grid(row=9, column=1)
-        Button(self, text="Home", command=self.m2_home, width=5).grid(row=10, column=1)
+        Button(self, text="Home", command=lambda: self.homing_operation(0x02), width=5).grid(row=10, column=1)
         Button(self, text="Fwd", command=self.m2_forward, width=5).grid(row=11, column=1)
         Button(self, text="Rev", command=self.m2_reverse, width=5).grid(row=12, column=1)
         Button(self, text="Stop", command=self.m2_stop, width=5).grid(row=13, column=1)
@@ -160,7 +160,7 @@ class MainApplication(Frame):
         # Motor 3 buttons
         #Button(self, text="Set", command=self.m3_speed, width=5).grid(row=6, column=2)
         Button(self, text="GoTo", command=self.m3_step, width=5).grid(row=9, column=2)
-        Button(self, text="Home", command=self.m3_home, width=5).grid(row=10, column=2)
+        Button(self, text="Home", command=lambda: self.homing_operation(0x03), width=5).grid(row=10, column=2)
         Button(self, text="Fwd", command=self.m3_forward, width=5).grid(row=11, column=2)
         Button(self, text="Rev", command=self.m3_reverse, width=5).grid(row=12, column=2)
         Button(self, text="Stop", command=self.m3_stop, width=5).grid(row=13, column=2)
@@ -208,12 +208,14 @@ class MainApplication(Frame):
         lower = step & 0xFFFF
         self.client.write_register(0x001E, 0x2000, unit=unit)
         self.client.write_registers(0x0402, [upper, lower], unit=unit)
-        status_labels = [self.status1, self.status2, self.status3]
-        #status_labels[unit-1].set("MOVE")
         self.client.write_register(0x001E, 0x2101, unit=unit)
         self.client.write_register(0x001E, 0x2001, unit=unit)
-        #self.get_position(unit)
-        
+
+    def homing_operation(self, unit):
+        self.client.write_register(0x001E, 0x2000, unit=unit)
+        self.client.write_register(0x001E, 0x2800, unit=unit)
+        self.client.write_register(0x001E, 0x2000, unit=unit)
+
     # Motor 1 methods
     def m1_speed(self):
         speed = int(self.motor_speed1.get())
@@ -224,26 +226,19 @@ class MainApplication(Frame):
     def m1_step(self):
         self.stepping_operation(self.motor_step1.get(), unit=0x01)
 
-    def m1_home(self):
-        self.client.write_register(0x001E, 0x2800, unit=0x01)
-        #self.status1.set("HOME")
-
     def m1_forward(self):
+        self.client.write_register(0x001E, 0x2000, unit=0x01)
         self.client.write_register(0x001E, 0x2201, unit=0x01)
-        #self.status1.set("MOVE")
 
     def m1_reverse(self):
+        self.client.write_register(0x001E, 0x2000, unit=0x01)
         self.client.write_register(0x001E, 0x2401, unit=0x01)
-        #self.status1.set("MOVE")
 
     def m1_stop(self):
-        self.client.write_register(0x001E, 0x2000, unit=0x01)
-        #self.status1["text"].set("ON")
-        #self.get_position(unit=0x01)
+        self.client.write_register(0x001E, 0x2001, unit=0x01)
 
     def m1_off(self):
         self.client.write_register(0x001E, 0x0000, unit=0x01)
-        #self.status1.set("OFF")
 
     # Motor 2 methods
     def m2_speed(self):
@@ -255,26 +250,19 @@ class MainApplication(Frame):
     def m2_step(self):
         self.stepping_operation(self.motor_step2.get(), unit=0x02)
 
-    def m2_home(self):
-        self.client.write_register(0x001E, 0x2800, unit=0x02)
-        #self.status2.set("HOME")
-
     def m2_forward(self):
+        self.client.write_register(0x001E, 0x2000, unit=0x01)
         self.client.write_register(0x001E, 0x2201, unit=0x02)
-        #self.status2.set("MOVE")
 
     def m2_reverse(self):
+        self.client.write_register(0x001E, 0x2000, unit=0x01)
         self.client.write_register(0x001E, 0x2401, unit=0x02)
-        #self.status2.set("MOVE")
 
     def m2_stop(self):
-        self.client.write_register(0x001E, 0x2000, unit=0x02)
-        #self.status2.set("ON")
-        #self.get_position(unit=0x02)
+        self.client.write_register(0x001E, 0x2001, unit=0x02)
 
     def m2_off(self):
         self.client.write_register(0x001E, 0x0000, unit=0x02)
-        #self.status2.set("OFF")
 
     # Motor 3 methods
     def m3_speed(self):
@@ -286,26 +274,19 @@ class MainApplication(Frame):
     def m3_step(self):
         self.stepping_operation(self.motor_step3.get(), unit=0x03)
 
-    def m3_home(self):
-        self.client.write_register(0x001E, 0x2800, unit=0x03)
-        #self.status3.set("HOME")
-
     def m3_forward(self):
+        self.client.write_register(0x001E, 0x2000, unit=0x01)
         self.client.write_register(0x001E, 0x2201, unit=0x03)
-        #self.status3.set("MOVE")
 
     def m3_reverse(self):
+        self.client.write_register(0x001E, 0x2000, unit=0x01)
         self.client.write_register(0x001E, 0x2401, unit=0x03)
-        #self.status3.set("MOVE")
 
     def m3_stop(self):
-        self.client.write_register(0x001E, 0x2000, unit=0x03)
-        #self.status3.set("ON")
-        #self.get_position(unit=0x03)
+        self.client.write_register(0x001E, 0x2001, unit=0x03)
 
     def m3_off(self):
         self.client.write_register(0x001E, 0x0000, unit=0x03)
-        #self.status3.set("OFF")
 
 def on_closing():
     if askokcancel("Quit", "Do you want to quit?"):
