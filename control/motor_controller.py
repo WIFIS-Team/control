@@ -14,6 +14,7 @@ from __future__ import print_function
 from pymodbus.client.sync import ModbusSerialClient as ModbusClient  
 
 from Tkinter import *
+from tkMessageBox import askokcancel
 
 class MainApplication(Frame):
     """
@@ -60,8 +61,11 @@ class MainApplication(Frame):
 
         self.create_widgets()
 
-        self.get_position()
-        self.update_status()
+        try:
+            self.get_position()
+            self.update_status()
+        except:
+            pass
 
     def create_widgets(self):
         """
@@ -183,12 +187,11 @@ class MainApplication(Frame):
         for unit in range(1,4):
             resp = self.client.read_holding_registers(0x0020,1, unit=unit)
             bin_resp = '{0:016b}'.format(resp.registers[0])
-
             if bin_resp[5] == '1' and bin_resp[2] == '0':
                 statuses[unit-1].set("MOVING")
             elif bin_resp[4] == '1' and bin_resp[2] == '1':
                 statuses[unit-1].set("HOME")
-            elif bin_resp[4] == 'r' and bin_resp[2] == '1':
+            elif bin_resp[4] == '0' and bin_resp[2] == '1':
                 statuses[unit-1].set("READY")
             elif bin_resp[0] == '1' and bin_resp[2] == '0':
                 statuses[unit-1].set("OFF/ERR")
@@ -206,7 +209,7 @@ class MainApplication(Frame):
         self.client.write_register(0x001E, 0x2000, unit=unit)
         self.client.write_registers(0x0402, [upper, lower], unit=unit)
         status_labels = [self.status1, self.status2, self.status3]
-        status_labels[unit-1].set("MOVE")
+        #status_labels[unit-1].set("MOVE")
         self.client.write_register(0x001E, 0x2101, unit=unit)
         self.client.write_register(0x001E, 0x2001, unit=unit)
         #self.get_position(unit)
@@ -223,24 +226,24 @@ class MainApplication(Frame):
 
     def m1_home(self):
         self.client.write_register(0x001E, 0x2800, unit=0x01)
-        self.status1.set("HOME")
+        #self.status1.set("HOME")
 
     def m1_forward(self):
         self.client.write_register(0x001E, 0x2201, unit=0x01)
-        self.status1.set("MOVE")
+        #self.status1.set("MOVE")
 
     def m1_reverse(self):
         self.client.write_register(0x001E, 0x2401, unit=0x01)
-        self.status1.set("MOVE")
+        #self.status1.set("MOVE")
 
     def m1_stop(self):
         self.client.write_register(0x001E, 0x2000, unit=0x01)
-        self.status1["text"].set("ON")
-        self.get_position(unit=0x01)
+        #self.status1["text"].set("ON")
+        #self.get_position(unit=0x01)
 
     def m1_off(self):
         self.client.write_register(0x001E, 0x0000, unit=0x01)
-        self.status1.set("OFF")
+        #self.status1.set("OFF")
 
     # Motor 2 methods
     def m2_speed(self):
@@ -254,24 +257,24 @@ class MainApplication(Frame):
 
     def m2_home(self):
         self.client.write_register(0x001E, 0x2800, unit=0x02)
-        self.status2.set("HOME")
+        #self.status2.set("HOME")
 
     def m2_forward(self):
         self.client.write_register(0x001E, 0x2201, unit=0x02)
-        self.status2.set("MOVE")
+        #self.status2.set("MOVE")
 
     def m2_reverse(self):
         self.client.write_register(0x001E, 0x2401, unit=0x02)
-        self.status2.set("MOVE")
+        #self.status2.set("MOVE")
 
     def m2_stop(self):
         self.client.write_register(0x001E, 0x2000, unit=0x02)
-        self.status2.set("ON")
-        self.get_position(unit=0x02)
+        #self.status2.set("ON")
+        #self.get_position(unit=0x02)
 
     def m2_off(self):
         self.client.write_register(0x001E, 0x0000, unit=0x02)
-        self.status2.set("OFF")
+        #self.status2.set("OFF")
 
     # Motor 3 methods
     def m3_speed(self):
@@ -285,27 +288,27 @@ class MainApplication(Frame):
 
     def m3_home(self):
         self.client.write_register(0x001E, 0x2800, unit=0x03)
-        self.status3.set("HOME")
+        #self.status3.set("HOME")
 
     def m3_forward(self):
         self.client.write_register(0x001E, 0x2201, unit=0x03)
-        self.status3.set("MOVE")
+        #self.status3.set("MOVE")
 
     def m3_reverse(self):
         self.client.write_register(0x001E, 0x2401, unit=0x03)
-        self.status3.set("MOVE")
+        #self.status3.set("MOVE")
 
     def m3_stop(self):
         self.client.write_register(0x001E, 0x2000, unit=0x03)
-        self.status3.set("ON")
-        self.get_position(unit=0x03)
+        #self.status3.set("ON")
+        #self.get_position(unit=0x03)
 
     def m3_off(self):
         self.client.write_register(0x001E, 0x0000, unit=0x03)
-        self.status3.set("OFF")
+        #self.status3.set("OFF")
 
 def on_closing():
-    if messagebox.askokcancel("Quit", "Do you want to quit?"):
+    if askokcancel("Quit", "Do you want to quit?"):
         root.destroy()
 
 def run_motor_gui_standalone():
@@ -320,7 +323,7 @@ def run_motor_gui_standalone():
     root = Tk()
     root.title("WIFIS Motor Controller")
     root.geometry("275x375")
-    root.protocol("WM_DELETE_WINDOW", on_closing)
+    #root.protocol("WM_DELETE_WINDOW", on_closing)
 
     app = MainApplication(root,client)
 
@@ -342,7 +345,7 @@ def run_motor_gui(tkroot):
     root = Toplevel(tkroot)
     root.title("WIFIS Motor Controller")
     root.geometry("250x375")
-    root.protocol("WM_DELETE_WINDOW", on_closing)
+    #root.protocol("WM_DELETE_WINDOW", on_closing)
 
     app = MainApplication(root,client)
 
