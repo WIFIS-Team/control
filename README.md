@@ -1,4 +1,4 @@
-# WIFIS-Code
+# Control Code
 
 A repository for all scripts related to controlling WIFIS as well as for data handling.
 
