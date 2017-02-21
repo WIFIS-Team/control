@@ -8,7 +8,6 @@ Contributors:
 
 * Suresh Sivanandam
 * Mark Ma
-* Jeff Chilcote
 * Elliot Meyer
 * Jason Leung
 * Miranda Jarvis
