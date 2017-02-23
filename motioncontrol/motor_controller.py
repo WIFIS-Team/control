@@ -167,15 +167,14 @@ class MainApplication(Frame):
         Button(self, text="Off", command=self.m3_off, width=5).grid(row=14, column=2)
 
     def get_position(self):
+        
+        position_labels = [self.pos1,self.pos2,self.pos3]
         for i in range(3):
             unit = i + 1
             temp = self.client.read_holding_registers(0x0118, 2, unit=unit)
             self.motor_position = (temp.registers[0] << 16) + temp.registers[1]
             if self.motor_position >= 2**31:
                 self.motor_position -= 2**32
-            #position_labels = [self.position1, self.position2, self.position3]
-            #position_labels[unit-1]["text"] = str(self.motor_position)
-            position_labels = [self.pos1,self.pos2,self.pos3]
             poslabel = position_labels[unit-1]
             poslabel.set(str(self.motor_position))
         self.after(100, self.get_position)
@@ -212,6 +211,21 @@ class MainApplication(Frame):
         self.client.write_register(0x001E, 0x2001, unit=unit)
 
     def homing_operation(self, unit):
+        
+        position_labels = [self.pos1,self.pos2,self.pos3]
+        
+        if int(position_labels[unit-1]) % 1000 < 500:         
+            units = [0x01,0x02,0x03]
+            #Forces motor to reverse
+            self.client.write_register(0x001E, 0x2000, unit=units[unit-1])
+            self.client.write_register(0x001E, 0x2401, unit=units[unit-1])
+            while (int(position_labels[unit-1]) % 1000 < 500) or (int(position_labels[unit-1]) % 1000 > 950):
+                #Waits until the motor has gone past home
+                position_labels = [self.pos1,self.pos2,self.pos3]
+            #Stops the motor
+            self.client.write_register(0x001E, 0x2001, unit=units[unit-1])
+        
+        #Homes the motor
         self.client.write_register(0x001E, 0x2000, unit=unit)
         self.client.write_register(0x001E, 0x2800, unit=unit)
         self.client.write_register(0x001E, 0x2000, unit=unit)
