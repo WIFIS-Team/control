@@ -1,0 +1,9 @@
+#!/bin/bash
+
+LOGFILE=$1
+
+while true
+do
+    scp -i /home/utopea/.ssh/lepus_rsa.pub "/home/utopea/WIFIS-Team/controlcode/monitor/$LOGFILE" meyer@lepus.astro.utoronto.ca:data/
+    sleep 60
+done
