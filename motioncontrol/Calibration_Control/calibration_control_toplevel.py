@@ -11,7 +11,7 @@
 #but this would probably cause the whole code to lag annoyingly. 
 
 # Miranda Jarvis Oct 2015
-# Updated by Elliot Meyer Jan 2015
+# Updated by Elliot Meyer Jan 2016
 
 from pylab import * 
 import serial
@@ -20,6 +20,7 @@ from Tkinter import *
 import ttk
 import dlipower
 import sys
+import signal
 
 #GUI OUTLINE
 #button 1: initiate calibration mode
@@ -49,10 +50,8 @@ import sys
 
 
 ###################################################
-#I took this form the internet so won't comment it cuase I don't really know 
-#how it works stops a function after waiting a time set by timeout_duration. 
 def timeout(func, args=(), kwargs={}, timeout_duration=1, default=None):
-    import signal
+    #import signal
 
     class TimeoutError(Exception):
         pass
@@ -577,10 +576,10 @@ def run_calib_gui(tkroot,mainloop = False):
 def run_calib_gui_standalone():
 
     #port for flipper arduino
-    fport='/dev/ttyACM0'
+    fport='/dev/ttyACM1'
 
     #port for sphere arduino
-    sport='/dev/ttyACM1'
+    sport='/dev/ttyACM0'
 
     ser,ser2,switch1,switch2 = setup_arduinos(fport,sport)
     

@@ -61,11 +61,8 @@ class MainApplication(Frame):
 
         self.create_widgets()
 
-        try:
-            self.get_position()
-            self.update_status()
-        except:
-            pass
+        self.get_position()
+        self.update_status()
 
     def create_widgets(self):
         """
@@ -172,11 +169,12 @@ class MainApplication(Frame):
         for i in range(3):
             unit = i + 1
             temp = self.client.read_holding_registers(0x0118, 2, unit=unit)
-            self.motor_position = (temp.registers[0] << 16) + temp.registers[1]
-            if self.motor_position >= 2**31:
-                self.motor_position -= 2**32
-            poslabel = position_labels[unit-1]
-            poslabel.set(str(self.motor_position))
+            if temp != None:
+                self.motor_position = (temp.registers[0] << 16) + temp.registers[1]
+                if self.motor_position >= 2**31:
+                    self.motor_position -= 2**32
+                poslabel = position_labels[unit-1]
+                poslabel.set(str(self.motor_position))
         self.after(100, self.get_position)
 
     def update_status(self):
@@ -185,17 +183,18 @@ class MainApplication(Frame):
         statuses = [self.status1, self.status2, self.status3]
         for unit in range(1,4):
             resp = self.client.read_holding_registers(0x0020,1, unit=unit)
-            bin_resp = '{0:016b}'.format(resp.registers[0])
-            if bin_resp[5] == '1' and bin_resp[2] == '0':
-                statuses[unit-1].set("MOVING")
-            elif bin_resp[4] == '1' and bin_resp[2] == '1':
-                statuses[unit-1].set("HOME")
-            elif bin_resp[4] == '0' and bin_resp[2] == '1':
-                statuses[unit-1].set("READY")
-            elif bin_resp[0] == '1' and bin_resp[2] == '0':
-                statuses[unit-1].set("OFF/ERR")
-            else:
-                statuses[unit-1].set("UNKN")
+            if resp != None:
+                bin_resp = '{0:016b}'.format(resp.registers[0])
+                if bin_resp[5] == '1' and bin_resp[2] == '0':
+                    statuses[unit-1].set("MOVING")
+                elif bin_resp[4] == '1' and bin_resp[2] == '1':
+                    statuses[unit-1].set("HOME")
+                elif bin_resp[4] == '0' and bin_resp[2] == '1':
+                    statuses[unit-1].set("READY")
+                elif bin_resp[0] == '1' and bin_resp[2] == '0':
+                    statuses[unit-1].set("OFF/ERR")
+                else:
+                    statuses[unit-1].set("UNKN")
 
         self.after(1000, self.update_status)
 
@@ -212,18 +211,18 @@ class MainApplication(Frame):
 
     def homing_operation(self, unit):
         
-        position_labels = [self.pos1,self.pos2,self.pos3]
+        #position_labels = [self.pos1,self.pos2,self.pos3]
         
-        if int(position_labels[unit-1]) % 1000 < 500:         
-            units = [0x01,0x02,0x03]
+        #if int(position_labels[unit-1]) % 1000 < 500:         
+        #    units = [0x01,0x02,0x03]
             #Forces motor to reverse
-            self.client.write_register(0x001E, 0x2000, unit=units[unit-1])
-            self.client.write_register(0x001E, 0x2401, unit=units[unit-1])
-            while (int(position_labels[unit-1]) % 1000 < 500) or (int(position_labels[unit-1]) % 1000 > 950):
+        #    self.client.write_register(0x001E, 0x2000, unit=units[unit-1])
+        #    self.client.write_register(0x001E, 0x2401, unit=units[unit-1])
+        #    while (int(position_labels[unit-1]) % 1000 < 500) or (int(position_labels[unit-1]) % 1000 > 950):
                 #Waits until the motor has gone past home
-                position_labels = [self.pos1,self.pos2,self.pos3]
+        #        position_labels = [self.pos1,self.pos2,self.pos3]
             #Stops the motor
-            self.client.write_register(0x001E, 0x2001, unit=units[unit-1])
+        #    self.client.write_register(0x001E, 0x2001, unit=units[unit-1])
         
         #Homes the motor
         self.client.write_register(0x001E, 0x2000, unit=unit)
