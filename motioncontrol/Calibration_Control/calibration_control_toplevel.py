@@ -1,11 +1,8 @@
-#gui that controls all of the calibration unit componants
+########
+# Methods for controlling the Calibration Unit flipper arms as well as controlling 
+# the power for all Calibration Unit components
 
-#I tried to make it so that there are a few simple buttons that will do all the
-#stpes needed to take calibration images and that the user can contorl the impo
-#rtant componanats seperatly if desired. Also no matter how gui is exited 
-#should make sure everything gets turned off
-
-#NOTE: the statuses of the componants displayed by this app won't be updated if
+#NOTE: the statuses of the components displayed by this app won't be updated if
 #their power is disrupted through other sources, keep this in mine (could add 
 #this function by adding an update_status() function like in power_control.py 
 #but this would probably cause the whole code to lag annoyingly. 
@@ -50,15 +47,14 @@ import signal
 
 
 ###################################################
+class TimeoutError(Exception):
+    pass
+
+def handler(signum, frame):
+    raise TimeoutError()
+
 def timeout(func, args=(), kwargs={}, timeout_duration=1, default=None):
-    #import signal
-
-    class TimeoutError(Exception):
-        pass
-
-    def handler(signum, frame):
-        raise TimeoutError()
-
+    
     # set the timeout handler
     signal.signal(signal.SIGALRM, handler) 
     signal.alarm(timeout_duration)
@@ -73,7 +69,8 @@ def timeout(func, args=(), kwargs={}, timeout_duration=1, default=None):
 
 # Assign your port and speed for sphere arduino
 def connect_sphere(fport, sport):
-    try: ser2 = serial.Serial(sport, 9600)
+    try: 
+        ser2 = serial.Serial(sport, 9600)
     except: 
         print 'Warning: unable to conect to arduino at'+sport
         try: ser2 = serial.Serial(fport, 9600)
@@ -89,9 +86,10 @@ def clear_out(ser):
     return a
     
 def setup_arduinos(fport,sport):
+
     ser2 = connect_sphere(fport,sport)
     print("Reset Sphere Arduino")
-    sleep(3) #not sure why does this
+    sleep(3)
     ser2.write(bytes('L'))
     answ=timeout(ser2.readline)
 
@@ -110,11 +108,14 @@ def setup_arduinos(fport,sport):
         
 
     # assign your port and speed for flipper arduino
-    try: ser = serial.Serial(fport, 9600)
-    except: print 'Warning: unable to conect to arduino at'+\
-        fport;sys.exit()
+    try: 
+        ser = serial.Serial(fport, 9600)
+    except: 
+        print 'Warning: unable to conect to arduino at'+fport
+        sys.exit()
+    
     print("Reset Flipper Arduino")
-    sleep(3) #not sure why does this
+    sleep(3) 
 
     #put each pin to low mode (won't move flippers if power is off which could 
     #cause some problems)

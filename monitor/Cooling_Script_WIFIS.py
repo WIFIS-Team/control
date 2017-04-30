@@ -192,7 +192,7 @@ def cooling_setpoints(): #dynamically generate setpoints for cooling
 def open_serial_port():
     global ser
     global ser_pressure
-    ser.port = "/dev/ttyUSB2"
+    ser.port = "/dev/ttyUSB1"
     ser.baudrate = 57600 
     ser.bytesize = serial.SEVENBITS
     ser.stopbits=serial.STOPBITS_ONE
@@ -204,7 +204,7 @@ def open_serial_port():
     else:
         print 'Unable to open serial port - T_control'
         
-    ser_pressure.port = '/dev/ttyUSB3'
+    ser_pressure.port = '/dev/ttyUSB0'
     ser_pressure.baudrate = 9600
     ser_pressure.timeout=0
     ser_pressure.open()

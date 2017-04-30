@@ -40,7 +40,8 @@ def load_FLIDevices():
     if flt != None:
         flt.set_filter_pos(0)
     if foc != None:
-        foc.home_focuser()
+        #foc.home_focuser()
+        pass
 
     # ??? any other default params ???
    
@@ -279,7 +280,8 @@ class FLIApplication(_tk.Frame):
             
             mpl.close()
             img_rot = np.rot90(img, k=3)
-            mpl.imshow(img_rot, cmap="Greys")
+            mpl.imshow(img_rot, cmap="gray")
+            #mpl.imshow(img)
             mpl.show()
 
 

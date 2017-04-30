@@ -76,7 +76,7 @@ ser_pressure = serial.Serial()
 open_serial_port(ser_temp,ser_pressure)
 
 # Output filesname
-fname = 'cooldown02182017.csv'
+fname = 'cooldown03182017-2.csv'
 # File header
 outFileHeader = ['#Time Stamp','seconds since epoch', 'Input A',  'Input B','Input C','Input D1', 'Input D2','Pressure']
 

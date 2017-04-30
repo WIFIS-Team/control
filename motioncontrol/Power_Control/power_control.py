@@ -1,5 +1,3 @@
-
-
 #relies on dlipower.py, (from https://pypi.python.org/pypi/dlipower)  which is 
 #uploaded here as well gui to control web power switches
 #updates to show changes made from other places than this app but LAGS so no 
@@ -417,8 +415,9 @@ def run_power_gui_standalone():
     root.mainloop() #loop over gui until closed
 
 if __name__ == '__main__':
-    #run_power_gui()
+    run_power_gui_standalone()
     pass
+    
 
 
 

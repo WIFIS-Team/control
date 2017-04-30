@@ -1,9 +1,13 @@
 #!/bin/bash
 
-LOGFILE=$1
-
 while true
 do
-    scp -i /home/utopea/.ssh/lepus_rsa.pub "/home/utopea/WIFIS-Team/controlcode/monitor/$LOGFILE" meyer@lepus.astro.utoronto.ca:data/
-    sleep 60
+    scp -i /home/utopea/.ssh/thor_rsa "/home/utopea/WIFIS-Team/controlcode/monitor/t_stream.html" suresh@thor.dunlap.utoronto.ca:Sites/wifis/
+    scp -i /home/utopea/.ssh/thor_rsa "/home/utopea/WIFIS-Team/controlcode/monitor/history_plot.jpg" suresh@thor.dunlap.utoronto.ca:Sites/wifis/
+    scp -i /home/utopea/.ssh/thor_rsa "/home/utopea/WIFIS-Team/controlcode/monitor/history_plot_heater.jpg" suresh@thor.dunlap.utoronto.ca:Sites/wifis/
+    scp -i /home/utopea/.ssh/thor_rsa "/home/utopea/WIFIS-Team/controlcode/monitor/history_plot_Tgrad.jpg" suresh@thor.dunlap.utoronto.ca:Sites/wifis/
+    scp -i /home/utopea/.ssh/thor_rsa "/home/utopea/WIFIS-Team/controlcode/monitor/pressure_plot.jpg" suresh@thor.dunlap.utoronto.ca:Sites/wifis/
+    scp -i /home/utopea/.ssh/thor_rsa "/home/utopea/WIFIS-Team/controlcode/monitor/Fri Apr 28 22-08-01 2017.csv" suresh@thor.dunlap.utoronto.ca:Dropbox/WIFIS-Electronics/temp_files/
+
+    sleep 20
 done

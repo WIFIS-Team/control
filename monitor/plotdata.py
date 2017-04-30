@@ -30,11 +30,11 @@ def smooth(x,window_len=11,window='hanning'):
 plt.close('all')
 plt.ion()
 
-data = np.loadtxt('cooldown02172017.csv',delimiter=',',usecols=(1,2,3,7))
+data = np.loadtxt('cooldown03182017.csv',delimiter=',',usecols=(1,2,3,7))
 
 # 1437076800.928176 July 16/2015 4:00 pm refill
 
-time = (data[:,0]-1437076800.928176)/3600.
+time = (data[:,0]-1489599000.248219)/3600.
 temp1 = data[:,1]
 temp2 = data[:,2]
 pressure = data[:,3]
@@ -55,13 +55,13 @@ plt.plot(time,temp1)
 plt.title('First Toronto Cooldown of WIFIS Cryostat (Start July 16/2015)')
 plt.xlabel('Time Since Final Fill (hr)')
 plt.ylabel('Temperature (K)')
-plt.xlim([-5,15])
+#plt.xlim([-5,15])
 plt.grid(True)
 plt.savefig('full_temp_zoom.png',dpi=300)
 
 plt.figure(3)
 grad = np.diff(temp2)*60/np.diff(time)
-plt.plot(time,smooth(deriv(time,temp1),window_len=30)/60.)
+plt.plot(time,smooth(deriv(time,temp2),window_len=30)/60.,'.-')
 plt.xlabel('Time Since Final Fill (hr)')
 plt.ylabel('Cooling Rate (K/min)')
 plt.title('Thermal Switch Performance (Start July 16/2015)')
