@@ -30,7 +30,7 @@ def smooth(x,window_len=11,window='hanning'):
 plt.close('all')
 plt.ion()
 
-data = np.loadtxt('cooldown02172017.csv',delimiter=',',usecols=(1,2,3,7))
+data = np.loadtxt('/Users/relliotmeyer/WIFIS-Team/controlcode/monitor/cooldown02042016.csv',delimiter=',',usecols=(1,2,3,7), skiprows=1)
 
 # 1437076800.928176 July 16/2015 4:00 pm refill
 
@@ -61,7 +61,7 @@ plt.savefig('full_temp_zoom.png',dpi=300)
 
 plt.figure(3)
 grad = np.diff(temp2)*60/np.diff(time)
-plt.plot(time,smooth(deriv(time,temp1),window_len=30)/60.)
+plt.plot(time,smooth(deriv(time,temp2),window_len=30)/60.)
 plt.xlabel('Time Since Final Fill (hr)')
 plt.ylabel('Cooling Rate (K/min)')
 plt.title('Thermal Switch Performance (Start July 16/2015)')
