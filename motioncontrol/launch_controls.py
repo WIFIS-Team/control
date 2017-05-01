@@ -27,11 +27,11 @@ print "Continuing...\n"
 
 #Set up Calib GUI
 print "Setting up Calibration control GUI...\n"
-#ser, ser2 = calib.run_calib_gui(root)
+ser, ser2 = calib.run_calib_gui(root)
 
 #Set up FLI/Guider Control GUI
 print "\nSetting up FLI control GUI..."
-#flic.run_fli_gui(root)
+flic.run_fli_gui(root)
 
 #Set up Motor Controller GUI
 print "\nSetting up Motor control GUI...\n"
