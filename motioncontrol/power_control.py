@@ -34,7 +34,7 @@ class MainApplication(Frame):
         Label(self, text="Toggle", font='bold').grid(row=0, column=3, padx=15)
 
 
-        #outlet number this is is slihglty useful
+        #outlet number
         Label(self, text="1").grid(row=1, column=0, padx=15)
         Label(self, text="2").grid(row=2, column=0, padx=15)
         Label(self, text="3").grid(row=3, column=0, padx=15)
@@ -42,16 +42,20 @@ class MainApplication(Frame):
         Label(self, text="5").grid(row=5, column=0, padx=15)
         Label(self, text="6").grid(row=6, column=0, padx=15)
         Label(self, text="7").grid(row=7, column=0, padx=15)
-
+        Label(self, text="8").grid(row=8, column=0, padx=15)
         #seperate power control 1 from two, should probalby label which is 
         #which but haven't for now.
-        ttk.Separator(self,orient=HORIZONTAL).grid(row=8, columnspan=4, \
+        ttk.Separator(self,orient=HORIZONTAL).grid(row=9, columnspan=4, \
             sticky="ew")
 
-        Label(self, text=" 1").grid(row=9, column=0, padx=15)
-        Label(self, text=" 2").grid(row=10, column=0, padx=15)
-        Label(self, text=" 3").grid(row=11, column=0, padx=15)
-        #Label(self, text=" 4").grid(row=12, column=0, padx=15)
+        Label(self, text="1").grid(row=10, column=0, padx=15)
+        Label(self, text="2").grid(row=11, column=0, padx=15)
+        Label(self, text="3").grid(row=12, column=0, padx=15)
+        Label(self, text="4").grid(row=13, column=0, padx=15)
+        Label(self, text="5").grid(row=14, column=0, padx=15)
+        Label(self, text="6").grid(row=15, column=0, padx=15)
+        Label(self, text="7").grid(row=16, column=0, padx=15)
+        Label(self, text="8").grid(row=17, column=0, padx=15)
 
         #gets description from power bars of which plug is which, to change 
         #this log on to their IP addresses in web browser (IP should be writtin
@@ -63,53 +67,64 @@ class MainApplication(Frame):
         Label(self, text=self.switch2[4].description).grid(row=5, column=1, padx=15)
         Label(self, text=self.switch2[5].description).grid(row=6, column=1, padx=15)
         Label(self, text=self.switch2[6].description).grid(row=7, column=1, padx=15)
-
-        Label(self, text=self.switch1[0].description).grid(row=9, column=1, padx=15)
-        Label(self, text=self.switch1[1].description).grid(row=10, column=1, \
-            padx=15)
-        Label(self, text=self.switch1[2].description).grid(row=11, column=1, \
-            padx=15)
-        #Label(self, text=switch1[3].description).grid(row=12, column=1, 
-            #padx=15)
+        Label(self, text=self.switch2[7].description).grid(row=8, column=1, padx=15)
+        
+        Label(self, text=self.switch1[0].description).grid(row=10, column=1, padx=15)
+        Label(self, text=self.switch1[1].description).grid(row=11, column=1, padx=15)
+        Label(self, text=self.switch1[2].description).grid(row=12, column=1, padx=15)
+        Label(self, text=self.switch1[3].description).grid(row=13, column=1, padx=15)
+        Label(self, text=self.switch1[4].description).grid(row=14, column=1, padx=15)
+        Label(self, text=self.switch1[5].description).grid(row=15, column=1, padx=15)
+        Label(self, text=self.switch1[6].description).grid(row=16, column=1, padx=15)
+        Label(self, text=self.switch1[7].description).grid(row=17, column=1, padx=15)
 
 
         #look if each plug is currently on or off, print status to reflect this
         #look at each for on or off to get colour right 
-        c=strs = ["" for x in range(7)]
-        for i in arange(7):
+        c=strs = ["" for x in range(8)]
+        for i in arange(8):
             if self.switch2[i].state=='OFF': c[i]='red'
             else: c[i]='green'
-        self.status1 = Label(self, text=self.switch2[0].state, fg =c[0] )
-        self.status1.grid(row=1, column=2)
-        self.status2 = Label(self, text=self.switch2[1].state, fg =c[1])
-        self.status2.grid(row=2, column=2)
-        self.status3 = Label(self, text=self.switch2[2].state,fg =c[2])
-        self.status3.grid(row=3, column=2)
-        self.status4 = Label(self, text=self.switch2[3].state,fg =c[3])
-        self.status4.grid(row=4, column=2)
-        self.status5 = Label(self, text=self.switch2[4].state,fg =c[4])
-        self.status5.grid(row=5, column=2)
-        self.status6 = Label(self, text=self.switch2[5].state,fg =c[5])
-        self.status6.grid(row=6, column=2)
-        self.status7 = Label(self, text=self.switch2[6].state,fg =c[6])
-        self.status7.grid(row=7, column=2)
-        #self.status8 = Label(self, text=switch2[7].state)
-        #self.status8.grid(row=8, column=2)
 
-        #have to look at colours again for power bar 1  
-        c=strs = ["" for x in range(4)]         
-        for i in arange(4):
+        self.status1 = Label(self, text=self.switch2[0].state,fg=c[0])
+        self.status1.grid(row=1, column=2)
+        self.status2 = Label(self, text=self.switch2[1].state,fg=c[1])
+        self.status2.grid(row=2, column=2)
+        self.status3 = Label(self, text=self.switch2[2].state,fg=c[2])
+        self.status3.grid(row=3, column=2)
+        self.status4 = Label(self, text=self.switch2[3].state,fg=c[3])
+        self.status4.grid(row=4, column=2)
+        self.status5 = Label(self, text=self.switch2[4].state,fg=c[4])
+        self.status5.grid(row=5, column=2)
+        self.status6 = Label(self, text=self.switch2[5].state,fg=c[5])
+        self.status6.grid(row=6, column=2)
+        self.status7 = Label(self, text=self.switch2[6].state,fg=c[6])
+        self.status7.grid(row=7, column=2)
+        self.status8 = Label(self, text=self.switch2[7].state,fg=c[7])
+        self.status8.grid(row=8, column=2)
+
+        #For the second power bar
+        c=strs = ["" for x in range(8)]         
+        for i in arange(8):
             if self.switch1[i].state=='OFF': c[i]='red'
             else: c[i]='green'
 
-        self.status8 = Label(self, text=self.switch1[0].state, fg =c[0] )
-        self.status8.grid(row=9, column=2)
-        self.status9 = Label(self, text=self.switch1[1].state, fg =c[1])
+        self.status9 = Label(self, text=self.switch1[0].state,fg=c[0])
         self.status9.grid(row=10, column=2)
-        self.status10 = Label(self, text=self.switch1[2].state,fg =c[2])
+        self.status10 = Label(self, text=self.switch1[1].state,fg=c[1])
         self.status10.grid(row=11, column=2)
-        #self.status11 = Label(self, text=switch1[3].state,fg =c[3])
-        #self.status11.grid(row=12, column=2)
+        self.status11 = Label(self, text=self.switch1[2].state,fg=c[2])
+        self.status11.grid(row=12, column=2)
+        self.status12 = Label(self, text=self.switch1[3].state,fg=c[3])
+        self.status12.grid(row=13, column=2)
+        self.status13 = Label(self, text=self.switch1[4].state,fg=c[4])
+        self.status13.grid(row=14, column=2)
+        self.status14 = Label(self, text=self.switch1[5].state,fg=c[5])
+        self.status14.grid(row=15, column=2)
+        self.status15 = Label(self, text=self.switch1[6].state,fg=c[6])
+        self.status15.grid(row=16, column=2)
+        self.status16 = Label(self, text=self.switch1[7].state,fg=c[7])
+        self.status16.grid(row=17, column=2)
 
         #make buttons to toggle on or off state, each has to have own function 
         #defined later
@@ -127,18 +142,26 @@ class MainApplication(Frame):
             row=6, column=3)
         Button(self, text="On/Off", command=self.toggle_plug7, width=5).grid(\
             row=7, column=3)
-        #Button(self, text="On/Off", command=self.toggle_plug8, width=5).grid(
-            #row=8, column=3)
+        Button(self, text="On/Off", command=self.toggle_plug8, width=5).grid(
+            row=8, column=3)
         
 
-        Button(self, text="On/Off", command=self.toggle_plug8, width=5).grid(\
-            row=9, column=3)
         Button(self, text="On/Off", command=self.toggle_plug9, width=5).grid(\
             row=10, column=3)
         Button(self, text="On/Off", command=self.toggle_plug10, width=5).grid(\
             row=11, column=3)
-        #Button(self, text="On/Off", command=self.toggle_plug11, width=5).grid(\
-            #row=12, column=3)
+        Button(self, text="On/Off", command=self.toggle_plug11, width=5).grid(\
+            row=12, column=3)
+        Button(self, text="On/Off", command=self.toggle_plug12, width=5).grid(\
+            row=13, column=3)
+        Button(self, text="On/Off", command=self.toggle_plug13, width=5).grid(\
+            row=14, column=3)
+        Button(self, text="On/Off", command=self.toggle_plug14, width=5).grid(\
+            row=15, column=3)
+        Button(self, text="On/Off", command=self.toggle_plug15, width=5).grid(\
+            row=16, column=3)
+        Button(self, text="On/Off", command=self.toggle_plug16, width=5).grid(\
+            row=17, column=3)
 
 
     def update_labels(self): 
@@ -149,9 +172,9 @@ class MainApplication(Frame):
         
         #check if each plug on or off again and set colour and text apropriatly
 
-        c=strs = ["" for x in range(7)]         
+        c=strs = ["" for x in range(8)]         
         
-        for i in arange(7):
+        for i in arange(8):
             if self.switch2[i].state=='OFF': c[i]='red'
             else: c[i]='green'
 
@@ -176,31 +199,41 @@ class MainApplication(Frame):
         self.status7['text']=self.switch2[6].state
         self.status7['fg']=c[6]
 
+        self.status8['text']=self.switch2[7].state
+        self.status8['fg']=c[7]
 
 
-        c=strs = ["" for x in range(4)]     
-        for i in arange(4):
+        c=strs = ["" for x in range(8)]     
+        for i in arange(8):
             if self.switch1[i].state=='OFF': c[i]='red'
             else: c[i]='green'
 
-        self.status8['text']=self.switch1[0].state
-        self.status8['fg']=c[0]
+        self.status9['text']=self.switch1[0].state
+        self.status9['fg']=c[0]
 
-        self.status9['text']=self.switch1[1].state
-        self.status9['fg']=c[1]
+        self.status10['text']=self.switch1[1].state
+        self.status10['fg']=c[1]
 
-        self.status10['text']=self.switch1[2].state
-        self.status10['fg']=c[2]
+        self.status11['text']=self.switch1[2].state
+        self.status11['fg']=c[2]
 
-        #self.status11['text']=switch1[3].state
-        #self.status11['fg']=c[3]
+        self.status12['text']=self.switch1[3].state
+        self.status12['fg']=c[3]
 
+        self.status13['text']=self.switch1[4].state
+        self.status13['fg']=c[4]
 
+        self.status14['text']=self.switch1[5].state
+        self.status14['fg']=c[5]
 
-        #print 'doing things'
+        self.status15['text']=self.switch1[6].state
+        self.status15['fg']=c[6]
+
+        self.status16['text']=self.switch1[7].state
+        self.status16['fg']=c[7]
+
         self.update() #update gui
         self.after(100,self.update_labels) 
-
 
 #These are the toggle plug buttons. each is the same turns the right plug 
 #on or off and changes the status to reflect this change
@@ -305,21 +338,21 @@ class MainApplication(Frame):
 
     def toggle_plug8(self):
         self.update()
-        n=0
-        status=self.switch1[n].state
+        n=7
+        status=self.switch2[n].state
         if status=='ON': 
-            self.switch1[n].state='OFF'
+            self.switch2[n].state='OFF'
             self.status8["text"] = "OFF"
             self.status8["fg"] = "red"
         else: 
-            self.switch1[n].state='ON'
+            self.switch2[n].state='ON'
             self.status8["text"] = "ON"
             self.status8["fg"] = "green"
         self.update()
 
     def toggle_plug9(self):
         self.update()
-        n=1
+        n=0
         status=self.switch1[n].state
         if status=='ON': 
             self.switch1[n].state='OFF'
@@ -333,7 +366,7 @@ class MainApplication(Frame):
 
     def toggle_plug10(self):
         self.update()
-        n=2
+        n=1
         status=self.switch1[n].state
         if status=='ON': 
             self.switch1[n].state='OFF'
@@ -360,15 +393,75 @@ class MainApplication(Frame):
         self.update()
 
 
-    #def toggle_plug8(self):
-    #   n=7
-    #   status=switch2[n].state
-    #   if status=='ON': 
-    #       switch2[n].state='OFF'
-    #       self.status8["text"] = "OFF"
-    #   else: 
-    #       switch2[n].state='ON'
-    #       self.status8["text"] = "ON"
+    def toggle_plug12(self):
+        self.update()
+        n=3
+        status=self.switch1[n].state
+        if status=='ON': 
+            self.switch1[n].state='OFF'
+            self.status12["text"] = "OFF"
+            self.status12["fg"] = "red"
+        else: 
+            self.switch1[n].state='ON'
+            self.status12["text"] = "ON"
+            self.status12["fg"] = "green"
+        self.update()
+
+    def toggle_plug13(self):
+        self.update()
+        n=4
+        status=self.switch1[n].state
+        if status=='ON': 
+            self.switch1[n].state='OFF'
+            self.status13["text"] = "OFF"
+            self.status13["fg"] = "red"
+        else: 
+            self.switch1[n].state='ON'
+            self.status13["text"] = "ON"
+            self.status13["fg"] = "green"
+        self.update()
+
+    def toggle_plug14(self):
+        self.update()
+        n=5
+        status=self.switch1[n].state
+        if status=='ON': 
+            self.switch1[n].state='OFF'
+            self.status14["text"] = "OFF"
+            self.status14["fg"] = "red"
+        else: 
+            self.switch1[n].state='ON'
+            self.status14["text"] = "ON"
+            self.status14["fg"] = "green"
+        self.update()
+
+    def toggle_plug15(self):
+        self.update()
+        n=6
+        status=self.switch1[n].state
+        if status=='ON': 
+            self.switch1[n].state='OFF'
+            self.status15["text"] = "OFF"
+            self.status15["fg"] = "red"
+        else: 
+            self.switch1[n].state='ON'
+            self.status15["text"] = "ON"
+            self.status15["fg"] = "green"
+        self.update()
+
+    def toggle_plug16(self):
+        self.update()
+        n=7
+        status=self.switch1[n].state
+        if status=='ON': 
+            self.switch1[n].state='OFF'
+            self.status16["text"] = "OFF"
+            self.status16["fg"] = "red"
+        else: 
+            self.switch1[n].state='ON'
+            self.status16["text"] = "ON"
+            self.status16["fg"] = "green"
+        self.update()
 
 def power_edit():
 
@@ -404,7 +497,7 @@ def run_power_gui(mainloop = False):
 
     root = Tk() 
     root.title("Power Switch Control") #name gui
-    root.geometry("500x375") #gui size
+    #root.geometry("500x375") #gui size
 
     app = MainApplication(root,switch1,switch2) #initialize gui 
     
@@ -429,7 +522,7 @@ def run_power_gui_standalone():
 
     root = Tk() #something about gui
     root.title("Power Switch Control") #name gui
-    root.geometry("500x375") #gui size
+    #root.geometry("500x375") #gui size
 
     app = MainApplication(root,switch1,switch2) #initialize gui 
 
