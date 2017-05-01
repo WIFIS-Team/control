@@ -370,6 +370,22 @@ class MainApplication(Frame):
     #       switch2[n].state='ON'
     #       self.status8["text"] = "ON"
 
+def power_edit():
+
+    #connect to power bars
+    print('Connecting to a DLI PowerSwitch at http://192.168.0.120 and '+\
+        'another at http://192.168.0.110 ')  
+    switch2 = PowerSwitch(hostname="192.168.0.120", userid="admin",\
+        password='9876',timeout=5)
+    switch1 = PowerSwitch(hostname="192.168.0.110", userid="admin",\
+        password='9876',timeout=5)
+    
+    if (not switch1.verify()) and (not switch2.verify()):
+        print("The powerswitches are not connected. Please connect them before running this software.")
+        return None, None
+
+    return switch1, switch2
+
 def run_power_gui(mainloop = False):
 
     #connect to power bars
@@ -384,8 +400,7 @@ def run_power_gui(mainloop = False):
         print("The powerswitches are not connected. Please connect them before running this software.")
         return None, None, None
     
-    
-    switch1[2].state='ON'
+    #switch1[2].state='ON'
 
     root = Tk() 
     root.title("Power Switch Control") #name gui
