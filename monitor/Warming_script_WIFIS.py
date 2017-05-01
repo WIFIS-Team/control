@@ -384,7 +384,7 @@ def upload_html_and_plots():
 #        server = 'jiyoon.astro.utoronto.ca'
 #        ssh.connect(server, username='kema', password='hellohello')
         server = 'thor.dunlap.utoronto.ca'
-        ssh.connect(server, username='suresh', password='')
+        ssh.connect(server, username='', password='')
         sftp = ssh.open_sftp()
         localpath = 't_stream.html'
         localpath_image = 'history_plot.jpg'

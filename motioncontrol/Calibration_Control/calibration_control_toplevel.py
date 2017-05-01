@@ -76,7 +76,7 @@ def connect_sphere(fport, sport):
         try: ser2 = serial.Serial(fport, 9600)
         except: 
             print 'Warning: unable to conect to arduino at'+fport
-            sys.exit()
+            #sys.exit()
     return ser2
 
 # Function that reads the board
@@ -108,11 +108,10 @@ def setup_arduinos(fport,sport):
         
 
     # assign your port and speed for flipper arduino
-    try: 
-        ser = serial.Serial(fport, 9600)
+    try: ser = serial.Serial(fport, 9600)
     except: 
         print 'Warning: unable to conect to arduino at'+fport
-        sys.exit()
+        #sys.exit()
     
     print("Reset Flipper Arduino")
     sleep(3) 
@@ -122,23 +121,26 @@ def setup_arduinos(fport,sport):
     ser.write(bytes('L'))
     ser.write(bytes('M'))
 
+    ####################################
     #connect to both power switches 
-    print('Connecting to a DLI PowerSwitch at http://192.168.0.120 and'+\
-        ' another at http://192.168.0.110 ')
-    switch2 = dlipower.PowerSwitch(hostname="192.168.0.120", userid="admin",\
-        password='9876')
-    switch1=dlipower.PowerSwitch(hostname="192.168.0.110", userid="admin",\
-        password='9876')
-    exit=0
+    #print('Connecting to a DLI PowerSwitch at http://192.168.0.120 and'+\
+    #    ' another at http://192.168.0.110 ')
+    #switch2 = dlipower.PowerSwitch(hostname="192.168.0.120", userid="admin",\
+    #    password='9876')
+    #switch1=dlipower.PowerSwitch(hostname="192.168.0.110", userid="admin",\
+    #    password='9876')
+    #exit=0
 
     #see if power switches connected:
-    try: c1=switch2[3].state
-    except: print 'Warning: power control #2 failed to connect'; exit=1
+    #try: c1=switch2[3].state
+    #except: print 'Warning: power control #2 failed to connect'; exit=1
 
-    try: c1=switch1[3].state
-    except: print 'Warning: power control #1 failed to connect'; exit=1
+    #try: c1=switch1[3].state
+    #except: print 'Warning: power control #1 failed to connect'; exit=1
 
-    if exit==1: sys.exit()
+    #if exit==1: sys.exit()
+    #####################################
+
 
     #first check to make sure there aren't any messages cached on the arduino 
     #as this will mess everything up read off until there are none since 
@@ -185,7 +187,6 @@ class MainApplication(Frame):
         #the way)
         ttk.Separator(self,orient=VERTICAL).grid(rowspan=12, column=1, \
             sticky="ns")
-
         ttk.Separator(self,orient=HORIZONTAL).grid(row=2, column=2, \
             columnspan=3, sticky="ew")
         ttk.Separator(self,orient=HORIZONTAL).grid(row=5, column=2, \
@@ -322,10 +323,10 @@ class MainApplication(Frame):
 
 
 #   turn on flipper plug
-        if self.switch2[3].state == 'OFF':
-            self.switch2[3].state='ON'
-            self.status_flippers['text']='ON'
-            self.status_flippers['fg']='green'
+        #if self.switch2[3].state == 'OFF':
+        #    self.switch2[3].state='ON'
+        #    self.status_flippers['text']='ON'
+        #    self.status_flippers['fg']='green'
 
 #   move on wifis flipper to blocking pos   
         self.flip2pos2()
