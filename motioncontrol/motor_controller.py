@@ -264,11 +264,11 @@ class MainApplication(Frame):
         self.stepping_operation(self.motor_step2.get(), unit=0x02)
 
     def m2_forward(self):
-        self.client.write_register(0x001E, 0x2000, unit=0x01)
+        self.client.write_register(0x001E, 0x2000, unit=0x02)
         self.client.write_register(0x001E, 0x2201, unit=0x02)
 
     def m2_reverse(self):
-        self.client.write_register(0x001E, 0x2000, unit=0x01)
+        self.client.write_register(0x001E, 0x2000, unit=0x02)
         self.client.write_register(0x001E, 0x2401, unit=0x02)
 
     def m2_stop(self):
@@ -288,11 +288,11 @@ class MainApplication(Frame):
         self.stepping_operation(self.motor_step3.get(), unit=0x03)
 
     def m3_forward(self):
-        self.client.write_register(0x001E, 0x2000, unit=0x01)
+        self.client.write_register(0x001E, 0x2000, unit=0x03)
         self.client.write_register(0x001E, 0x2201, unit=0x03)
 
     def m3_reverse(self):
-        self.client.write_register(0x001E, 0x2000, unit=0x01)
+        self.client.write_register(0x001E, 0x2000, unit=0x03)
         self.client.write_register(0x001E, 0x2401, unit=0x03)
 
     def m3_stop(self):
