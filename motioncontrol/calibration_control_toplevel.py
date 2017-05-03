@@ -11,7 +11,7 @@
 #but this would probably cause the whole code to lag annoyingly. 
 
 # Miranda Jarvis Oct 2015
-# Updated by Elliot Meyer Jan 2016
+# Updated by Elliot Meyer Jan 2016, May 2017
 
 from pylab import * 
 import serial
@@ -51,7 +51,6 @@ import signal
 
 ###################################################
 def timeout(func, args=(), kwargs={}, timeout_duration=1, default=None):
-    #import signal
 
     class TimeoutError(Exception):
         pass
@@ -80,55 +79,54 @@ def connect_sphere(fport, sport):
         try: ser2 = serial.Serial(fport, 9600)
         except: 
             print 'Warning: unable to conect to arduino at'+fport
-            #sys.exit()
     return ser2
 
 # Function that reads the board
 def clear_out(ser):
     a=ser.readline()
-    #print a[0]
     return a
     
 def setup_arduinos(fport,sport):
-    ser2 = connect_sphere(fport,sport)
-    print("Reset Sphere Arduino")
-    sleep(3) #not sure why does this
-    
-    answ = None
-    if ser2:
-        ser2.write(bytes('L'))
-        answ=timeout(ser2.readline)
+    """Connect to both arduinos. Ensure the USB hub is powered. 
+    Returns the two arduino serial variables."""
 
-        if not answ:
-            print 'gave wrong port for sphere arduino, switching ports'
+    sphere = connect_sphere(fport,sport)
+    print("Resetting Sphere Arduino")
+    sleep(3) 
+    
+    out = None
+    if sphere:
+        sphere.write(bytes('L'))
+        out=timeout(sphere.readline)
+
+        if not out:
+            print 'Port may be wrong for arduino, trying other port...'
             fport,sport=sport,fport
-            ser2=connect_sphere(fport, sport)
-            print("Reset Sphere Arduino")
+            sphere=connect_sphere(fport, sport)
+            print("Resetting Sphere Arduino")
             sleep(3)
-        elif answ.split('\r')[0] != 'OFF':
-            print 'gave wrong port for sphere arduino, switching ports' 
+        elif out.split('\r')[0] != 'OFF':
+            print 'Port may be wrong for arduino, trying other port...'
             fport,sport=sport,fport
-            ser2=connect_sphere(fport,sport)
-            print("Reset Sphere Arduino")
+            sphere=connect_sphere(fport,sport)
+            print("Resetting Sphere Arduino")
             sleep(3)
         
-
-    # assign your port and speed for flipper arduino
+    #Now connecting to the flipper Arduino
     try: ser = serial.Serial(fport, 9600)
     except: 
         print 'Warning: unable to conect to arduino at'+fport
         ser = None
-        #sys.exit()
-    
-    print("Reset Flipper Arduino")
-    sleep(3) #not sure why does this
+    print("Resetting Flipper Arduino")
+    sleep(3) 
 
     #put each pin to low mode (won't move flippers if power is off which could 
     #cause some problems)
     if ser:
         ser.write(bytes('L'))
         ser.write(bytes('M'))
-#first check to make sure there aren't any messages cached on the arduino 
+
+    #first check to make sure there aren't any messages cached on the arduino 
     #as this will mess everything up read off until there are none since 
     #reading a message when none there causes the code to hang, 
     #defined timeout() above to stop it after a few seconds 
@@ -184,45 +182,39 @@ class MainApplication(Frame):
         #and off by itself)
         ######################################################
         Label(self, text="Integrating Sphere", font='bold').grid(row=0, \
-            column=2, padx=15)
+            column=1, padx=15)
 
         Button(self, text="On/Off", command=self.toggle_sphere, width=5).grid(\
-            row=1, column=2)
-        Label(self, text="Status:").grid(row=1, column=3)
+            row=0, column=3)
+        Label(self, text="Status:").grid(row=0, column=4)
         
         #this will update if sphere turned on by top level controls or by the 
         #button in this section NOT if changed elsewhere
         self.status_sphere = Label(self, text='OFF', fg ='red' ) 
-        self.status_sphere.grid(row=1, column=4)
+        self.status_sphere.grid(row=0, column=4)
 
         Label(self, text="Flipper 1 (In Calibration Box)", font='bold',\
-            anchor=W).grid(row=8, column=2,columnspan=2, padx=15,sticky="ew")
-        
+            anchor=W).grid(row=2, column=1,columnspan=2, padx=15,sticky="ew")
         self.b1=Button(self, text="Pos1 (Integrating Sphere)", \
             command=self.flip1pos1,relief=SUNKEN)
-        self.b1.grid(row=9, column=2)
-
+        self.b1.grid(row=2, column=3)
         self.b2=Button(self, text="Pos2 (Arc Lamp)", command=self.flip1pos2, \
             relief=RAISED)
-        self.b2.grid(row=9, column=3)
-
+        self.b2.grid(row=2, column=4)
         self.s1 = Label(self, text='in position', fg ='green' )
-        self.s1.grid(row=9, column=4, padx=15)
+        self.s1.grid(row=2, column=5, padx=15)
 
 
         Label(self, text="Flipper 2 (On WIFIS)", font='bold',anchor=W).grid(\
-            row=10, column=2,columnspan=2, padx=15,sticky="ew")
-
+            row=3, column=1,columnspan=2, padx=15,sticky="ew")
         self.b3=Button(self, text="Pos1 (Observation Mode)", \
             command=self.flip2pos1, relief=SUNKEN)
-        self.b3.grid(row=11, column=2)
-
+        self.b3.grid(row=3, column=3)
         self.b4=Button(self, text="Pos2 (Calibration Mode)", \
             command=self.flip2pos2, relief=RAISED)
-        self.b4.grid(row=11, column=3)
-
+        self.b4.grid(row=3, column=4)
         self.s2 = Label(self, text='in position', fg ='green' )
-        self.s2.grid(row=11, column=4, padx=15)
+        self.s2.grid(row=3, column=5, padx=15)
         
 
 #Top level control (each button does a series of steps to do calibratoin and 
@@ -230,13 +222,6 @@ class MainApplication(Frame):
 ######################################################
     def f1(self): #(enter calibration mode)
 
-
-
-#   turn on flipper plug
-        #if self.switch2[3].state == 'OFF':
-        #    self.switch2[3].state='ON'
-        #    self.status_flippers['text']='ON'
-        #    self.status_flippers['fg']='green'
 
 #   move on wifis flipper to blocking pos   
         self.flip2pos2()
@@ -248,23 +233,18 @@ class MainApplication(Frame):
         self.c6['relief']=RAISED
         self.update()
 
-#   turn on sphere power
-        #self.switch2[1].state='ON'
-
     def f2(self): #prepare to take flats
         if self.c2['relief']==RAISED:
 
-#   move mirror in calibratoin box to right positon
+            #   move mirror in calibratoin box to right positon
             self.flip1pos1()
-#   turn on integrating sphere 
+            #   turn on integrating sphere 
             self.ser2.readline()
             self.ser2.write(bytes('H'))
             self.status_sphere["text"] = "ON"
             self.status_sphere["fg"] = "green"
-        
-            
 
-#   put buttons into arangement to show which are possible now
+            #   put buttons into arangement to show which are possible now
             self.c2['relief']=SUNKEN
             self.c3['relief']=RAISED
             self.c4['relief']=SUNKEN
@@ -288,7 +268,6 @@ class MainApplication(Frame):
 #   move mirror in calibration box to right position
             self.flip1pos2()
 #   turn on plug for arc lamp 
-            #self.switch2[2].state='ON'
             self.status_arc['text']='ON'
             self.status_arc['fg']='green'
 
@@ -299,7 +278,6 @@ class MainApplication(Frame):
 
     def f5(self): #done wavelelgnth
 #   turn of plug for arc lamp 
-        #self.switch2[2].state='OFF'
         self.status_arc['text']='OFF'
         self.status_arc['fg']='red'
 
@@ -316,22 +294,19 @@ class MainApplication(Frame):
         self.flip1pos1()
 
 #   turn off arc lamp plugs in case left on
-        #self.switch2[2].state='OFF'
         self.status_arc['text']='OFF'
         self.status_arc['fg']='red'
 
 #   turn off plug for flippers
-        #self.switch2[3].state='OFF'
         self.status_flippers['text']='OFF'
         self.status_flippers['fg']='red'
 #   turn off sphere and plug for sphere 
         self.ser2.write(bytes('L'))
-        #self.switch2[1].state='OFF'
         self.status_sphere['text']='OFF'
         self.status_sphere['fg']='red'
 
-##  make sure sphere arduino pins in low mode
-        #ser2.write(bytes('L'))
+#  make sure sphere arduino pins in low mode
+        ser2.write(bytes('L'))
         
 #   put buttons into arangement to show which are possible now
         self.c1['relief']=RAISED
@@ -340,18 +315,6 @@ class MainApplication(Frame):
         self.c4['relief']=SUNKEN
         self.c5['relief']=SUNKEN
         self.c6['relief']=SUNKEN
-
-    def fliponoff(self):
-        #status =self.switch2[3].state
-        #if status=='ON':
-        #     self.switch2[3].state='OFF'
-        #     self.status_flippers["text"] = "OFF"
-        #     self.status_flippers["fg"] = "red"
-        #else:
-        #     self.switch2[3].state='ON'
-        #     self.status_flippers["text"] = "ON"
-        #     self.status_flippers["fg"] = "green"
-        pass
 
 #Sphere stuff (button turns sphere on or off and update status), right now 
 #using ttl, but might change this to just use the plug)
@@ -372,35 +335,6 @@ class MainApplication(Frame):
             self.status_sphere["text"] = "ON"
             self.status_sphere["fg"] = "green"
         
-        #to toggle by power
-        #n=2
-        #status=switch2[n].state
-        #if status=='ON': 
-        #   switch2[n].state='OFF'
-        #   self.status_sphere["text"] = "OFF"
-        #   self.status_sphere["fg"] = "red"
-        #else: 
-        #   switch2[n].state='ON'
-        #   self.status_sphere["text"] = "ON"
-        #   self.status_sphere["fg"] = "green"  
-
-
-#Arc Lamp stuff (turns lamp on or off using outlet, updates status) 
-######################################################
-    def toggle_arc(self):
-        #n=2
-        #status=self.switch2[n].state
-        #if status=='ON': 
-        #    self.switch2[n].state='OFF'
-        #    self.status_arc["text"] = "OFF"
-        #    self.status_arc["fg"] = "red"
-        #else: 
-        #    self.switch2[n].state='ON'
-        #    self.status_arc["text"] = "ON"
-        #    self.status_arc["fg"] = "green"
-        pass
-
-
 #Flipper stuff (see flipper_gui.py for explenations of theses) tells flippers 
 #to move to a given positoin and shows when it's moving and when its stopped 
 ######################################################
@@ -493,10 +427,10 @@ def run_calib_gui(tkroot,mainloop = False):
 def run_calib_gui_standalone():
 
     #port for flipper arduino
-    fport='/dev/ttyACM1'
+    fport='/dev/ttyACM2'
 
     #port for sphere arduino
-    sport='/dev/ttyACM0'
+    sport='/dev/ttyACM3'
 
     ser,ser2 = setup_arduinos(fport,sport)
    
