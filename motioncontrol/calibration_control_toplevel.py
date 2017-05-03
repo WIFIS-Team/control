@@ -34,15 +34,16 @@ def timeout(func, args=(), kwargs={}, timeout_duration=1, default=None):
     return result
 
 # Assign your port and speed for sphere arduino
-#def connect_sphere(fport, sport):
-#    ser2 = None
-#    try: ser2 = serial.Serial(sport, 9600)
-#    except: 
-#        print 'Warning: unable to conect to arduino at'+sport
-#        try: ser2 = serial.Serial(fport, 9600)
-#        except: 
-#            print 'Warning: unable to conect to arduino at'+fport
-#    return ser2
+def connect_sphere(fport, sport):
+    ser2 = None
+    flag = 1
+    try: ser2 = serial.Serial(sport, 9600)
+    except: 
+        print 'Unable to connect to arduino at %s. Trying other port.' % (sport,)
+        try: ser2 = serial.Serial(fport, 9600)
+        except: 
+            print 'Warning: unable to conect to arduino at'+fport
+    return ser2, flag
 
 # Function that reads the board
 #def clear_out(ser):
@@ -53,7 +54,7 @@ def setup_arduinos(fport,sport):
     """Connect to both arduinos. Ensure the USB hub is powered. 
     Returns the two arduino serial variables."""
 
-    sphere = serial.Serial(sport, 9600)
+    sphere, flag = connect_sphere(fport, sport)
     print("Resetting Sphere Arduino")
     sleep(3) 
     
@@ -63,18 +64,24 @@ def setup_arduinos(fport,sport):
         out=timeout(sphere.readline)
 
         if not out:
-            print 'Port may be wrong for arduino, trying other port...'
+            print 'Port may be wrong for the sphere arduino, trying other port...'
             fport,sport=sport,fport
             sphere=serial.Serial(sport,9600)
             print("Resetting Sphere Arduino")
             sleep(3)
         elif out.split('\r')[0] != 'OFF':
-            print 'Port may be wrong for arduino, trying other port...'
+            print 'Port may be wrong for the sphere arduino, trying other port...'
             fport,sport=sport,fport
             sphere=serial.Serial(sport,9600)
             print("Resetting Sphere Arduino")
             sleep(3)
+    else:
+        print 'Port may be wrong for the sphere arduino, trying other port...'
+        fport,sport=sport,fport
+        sphere=serial.Serial(sport,9600)
         
+        print("Resetting Sphere Arduino")
+        sleep(3)
     #Now connecting to the flipper Arduino
     try: flip = serial.Serial(fport, 9600)
     except: 
@@ -192,7 +199,7 @@ class MainApplication(Frame):
         self.ser.write(bytes('M'))
         self.s1["text"] = "In Motion"
         self.s1["fg"] = "red"
-        self.update()
+        #self.update()
         q='1'
         while q=='1':
             self.ser.write(bytes('V'))
@@ -207,7 +214,7 @@ class MainApplication(Frame):
         self.ser.write(bytes('N'))
         self.s1['text']='In Motion'
         self.s1['fg']='red'
-        self.update()
+        #self.update()
         q='1'
         while q=='1':
             self.ser.write(bytes('V'))
@@ -222,7 +229,7 @@ class MainApplication(Frame):
         self.ser.write(bytes('L'))
         self.s2["text"] = "In Motion"
         self.s2["fg"] = "red"
-        self.update()
+        #self.update()
         q='1'
         while q=='1':
             self.ser.write(bytes('R'))
@@ -237,7 +244,7 @@ class MainApplication(Frame):
         self.ser.write(bytes('H'))
         self.s2['text']='In Motion'
         self.s2['fg']='red'
-        self.update()
+        #self.update()
         q='1'
         while q=='1':
             self.ser.write(bytes('R'))
@@ -252,7 +259,6 @@ def run_calib_gui(tkroot,mainloop = False):
 
     #port for flipper arduino
     fport='/dev/ttyACM2'
-
     #port for sphere arduino
     sport='/dev/ttyACM3'
 
