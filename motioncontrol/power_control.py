@@ -493,11 +493,10 @@ def run_power_gui(mainloop = False):
         print("The powerswitches are not connected. Please connect them before running this software.")
         return None, None, None
     
-    #switch1[2].state='ON'
+    #switch2[2].state='ON'
 
     root = Tk() 
     root.title("Power Switch Control") #name gui
-    #root.geometry("500x375") #gui size
 
     app = MainApplication(root,switch1,switch2) #initialize gui 
     
@@ -522,7 +521,6 @@ def run_power_gui_standalone():
 
     root = Tk() #something about gui
     root.title("Power Switch Control") #name gui
-    #root.geometry("500x375") #gui size
 
     app = MainApplication(root,switch1,switch2) #initialize gui 
 

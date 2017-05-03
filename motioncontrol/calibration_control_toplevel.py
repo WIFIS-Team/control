@@ -14,7 +14,7 @@ import signal
 
 ###################################################
 def timeout(func, args=(), kwargs={}, timeout_duration=1, default=None):
-
+    """Handles timeouts when querying the arduinos. Ensures the program does not hang."""
     class TimeoutError(Exception):
         pass
 
@@ -33,28 +33,13 @@ def timeout(func, args=(), kwargs={}, timeout_duration=1, default=None):
 
     return result
 
-# Assign your port and speed for sphere arduino
-def connect_sphere(fport, sport):
-    ser2 = None
-    flag = 1
-    try: ser2 = serial.Serial(sport, 9600)
-    except: 
-        print 'Unable to connect to arduino at %s. Trying other port.' % (sport,)
-        try: ser2 = serial.Serial(fport, 9600)
-        except: 
-            print 'Warning: unable to conect to arduino at'+fport
-    return ser2, flag
-
-# Function that reads the board
-#def clear_out(ser):
-#    a=ser.readline()
-#    return a
-    
 def setup_arduinos(fport,sport):
     """Connect to both arduinos. Ensure the USB hub is powered. 
+    The script determines which arduino is which.
     Returns the two arduino serial variables."""
 
-    sphere, flag = connect_sphere(fport, sport)
+    #sphere, flag = connect_sphere(fport, sport)
+    sphere = serial.Serial(sport, 9600)
     print("Resetting Sphere Arduino")
     sleep(3) 
     
@@ -79,9 +64,12 @@ def setup_arduinos(fport,sport):
         print 'Port may be wrong for the sphere arduino, trying other port...'
         fport,sport=sport,fport
         sphere=serial.Serial(sport,9600)
-        
         print("Resetting Sphere Arduino")
         sleep(3)
+        if not sphere:
+            print 'It appears that there are no arduinos attached. Please check the connections.'
+            return
+
     #Now connecting to the flipper Arduino
     try: flip = serial.Serial(fport, 9600)
     except: 
@@ -121,9 +109,8 @@ def setup_arduinos(fport,sport):
     return flip, sphere
 
 class MainApplication(Frame): 
-    '''this class holds all of the gui into and button functions for the 
-    calibration unit control GUI.'''
-
+    """Defines the GUI including the buttons as well as the button functions."""
+    
     def __init__(self,master,ser,ser2):#,switch1,switch2): #setup basic gui stuff
         Frame.__init__(self, master)
         self.grid()
@@ -141,10 +128,10 @@ class MainApplication(Frame):
 
         Button(self, text="On/Off", command=self.toggle_sphere, width=5).grid(\
             row=0, column=3)
-        Label(self, text="Status:").grid(row=0, column=4)
+        Label(self, text="Status:", font='bold').grid(row=0, column=4)
         
-        self.status_sphere = Label(self, text='OFF', fg ='red' ) 
-        self.status_sphere.grid(row=0, column=4)
+        self.status_sphere = Label(self, text='OFF', font='bold', fg ='red' ) 
+        self.status_sphere.grid(row=0, column=5)
 
         
         ######################################################################
@@ -199,12 +186,12 @@ class MainApplication(Frame):
         self.ser.write(bytes('M'))
         self.s1["text"] = "In Motion"
         self.s1["fg"] = "red"
-        #self.update()
+        self.update()
         q='1'
         while q=='1':
             self.ser.write(bytes('V'))
             q=self.ser.readline()[0]
-            sleep(0.1)
+            sleep(1)
         self.s1["text"] = "In Position"
         self.s1["fg"] = "green"
         self.b1['relief']=SUNKEN
@@ -214,12 +201,12 @@ class MainApplication(Frame):
         self.ser.write(bytes('N'))
         self.s1['text']='In Motion'
         self.s1['fg']='red'
-        #self.update()
+        self.update()
         q='1'
         while q=='1':
             self.ser.write(bytes('V'))
             q=self.ser.readline()[0]
-            sleep(0.1)
+            sleep(1)
         self.s1["text"] = "In Position"
         self.s1["fg"] = "green" 
         self.b2['relief']=SUNKEN
@@ -229,12 +216,12 @@ class MainApplication(Frame):
         self.ser.write(bytes('L'))
         self.s2["text"] = "In Motion"
         self.s2["fg"] = "red"
-        #self.update()
+        self.update()
         q='1'
         while q=='1':
             self.ser.write(bytes('R'))
             q=self.ser.readline()[0]
-            sleep(0.1)
+            sleep(1)
         self.s2["text"] = "In Position"
         self.s2["fg"] = "green"
         self.b3['relief']=SUNKEN
@@ -244,18 +231,20 @@ class MainApplication(Frame):
         self.ser.write(bytes('H'))
         self.s2['text']='In Motion'
         self.s2['fg']='red'
-        #self.update()
+        self.update()
         q='1'
         while q=='1':
             self.ser.write(bytes('R'))
             q=self.ser.readline()[0]
-            sleep(0.1)
+            sleep(1)
         self.s2["text"] = "In Position"
         self.s2["fg"] = "green" 
         self.b4['relief']=SUNKEN
         self.b3['relief']=RAISED
 
 def run_calib_gui(tkroot,mainloop = False):
+    """Function for running the calibration as part of the launch_controls.py
+    program. To run as standalone just run this scipt."""
 
     #port for flipper arduino
     fport='/dev/ttyACM2'
@@ -277,6 +266,8 @@ def run_calib_gui(tkroot,mainloop = False):
     return ser, ser2
 
 def run_calib_gui_standalone():
+    """Standalone version of this script for use in case launch_controls fails
+    or for testing"""
 
     #port for flipper arduino
     fport='/dev/ttyACM2'
