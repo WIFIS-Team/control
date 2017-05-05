@@ -307,7 +307,7 @@ def on_closing():
 
 def run_motor_gui_standalone():
 
-    client = ModbusClient(method="rtu", port="/dev/ttyUSB2", stopbits=1, \
+    client = ModbusClient(method="rtu", port="/dev/motor", stopbits=1, \
         bytesize=8, parity='E', baudrate=9600, timeout=0.1)
     
     # connect to the serial modbus server
@@ -328,7 +328,7 @@ def run_motor_gui_standalone():
 
 def run_motor_gui(tkroot):
 
-    client = ModbusClient(method="rtu", port="/dev/ttyUSB2", stopbits=1, \
+    client = ModbusClient(method="rtu", port="/dev/motor", stopbits=1, \
         bytesize=8, parity='E', baudrate=9600, timeout=0.1)
 
     # connect to the serial modbus server

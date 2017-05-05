@@ -501,7 +501,7 @@ def run_power_gui(mainloop = False):
     app = MainApplication(root,switch1,switch2) #initialize gui 
     
     #tell it to start doing the update_labels function after a few seconds
-    app.after(5,app.update_labels)  
+    #app.after(5,app.update_labels)  
 
     return root,switch1,switch2
 
@@ -525,7 +525,7 @@ def run_power_gui_standalone():
     app = MainApplication(root,switch1,switch2) #initialize gui 
 
     #tell it to start doing the update_labels function after a few seconds
-    app.after(5,app.update_labels)  
+    #app.after(5,app.update_labels)  
 
     root.mainloop() #loop over gui until closed
 

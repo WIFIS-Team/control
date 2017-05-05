@@ -249,7 +249,7 @@ def run_calib_gui(tkroot,mainloop = False):
     #port for flipper arduino
     fport='/dev/ttyACM2'
     #port for sphere arduino
-    sport='/dev/ttyACM3'
+    sport='/dev/ttyACM1'
 
     ser,ser2 = setup_arduinos(fport,sport)
     
@@ -273,7 +273,7 @@ def run_calib_gui_standalone():
     fport='/dev/ttyACM2'
 
     #port for sphere arduino
-    sport='/dev/ttyACM3'
+    sport='/dev/ttyACM1'
 
     ser,ser2 = setup_arduinos(fport,sport)
    
