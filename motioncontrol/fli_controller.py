@@ -61,7 +61,6 @@ class FLIApplication(_tk.Frame):
         #Try to import FLI devices
         try:
             self.cam, self.foc, self.flt = load_FLIDevices()
-            print self.cam, self.foc, self.flt
         except (ImportError, RuntimeError, NameError):
             self.cam, self.foc, self.flt = [None,None,None]
  
