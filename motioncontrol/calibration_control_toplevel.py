@@ -247,9 +247,9 @@ def run_calib_gui(tkroot,mainloop = False):
     program. To run as standalone just run this scipt."""
 
     #port for flipper arduino
-    fport='/dev/ttyACM2'
+    fport='/dev/flipper_arduino'
     #port for sphere arduino
-    sport='/dev/ttyACM1'
+    sport='/dev/sphere_arduino'
 
     ser,ser2 = setup_arduinos(fport,sport)
     
@@ -270,10 +270,10 @@ def run_calib_gui_standalone():
     or for testing"""
 
     #port for flipper arduino
-    fport='/dev/ttyACM2'
+    fport='/dev/flipper_arduino'
 
     #port for sphere arduino
-    sport='/dev/ttyACM1'
+    sport='/dev/sphere_arduino'
 
     ser,ser2 = setup_arduinos(fport,sport)
    

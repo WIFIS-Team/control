@@ -19,6 +19,7 @@ class Formatter(object):
     def __call__(self, x, y):
         z = self.im.get_array()[int(y), int(x)]
         return 'x={:.01f}, y={:.01f}, z={:.01f}'.format(x, y, z)
+
 # Channel Correct
 def channelrefcorrect(data,channel=32):
     corrfactor = np.zeros(channel)
@@ -48,6 +49,8 @@ class MainApplication(Frame):
         self.histogram = IntVar(value=0)
         self.nreads = IntVar(value=1)
         self.nramps = IntVar(value=1)
+        self.obstype = StringVar(self)
+        self.sourcename = StringVar(self)
  
         self.create_widgets()
 
@@ -66,36 +69,41 @@ class MainApplication(Frame):
         self.status = Label(self, text=self.currentStatus, font='bold', bg ='red',width=10)
         self.status.grid(row=0, column=6, padx=15)
 
-        
-        ######################################################################
-        # Calibration Box Flipper Control 
-        ######################################################
+        Label(self, text="Observation Type:", font='bold').grid(row=1, column=1, columnspan=2, padx=15)
+        choices = { 'Science','Sky','Flat','Arc','Ronchi','Other'}
+        self.obstype.set('Science')
 
-        Label(self, text="Expose:", font='bold').grid(row=1, column=1, columnspan=2, padx=15)
+        self.obstypemenu = OptionMenu(self,self.obstype,*choices)
+        self.obstypemenu.grid(row=1,column=3,columnspan=1,padx=15)
+        Label(self, text="Source:").grid(row=1, column=4, padx=15)
+        self.esource=Entry(self,textvariable=self.sourcename)
+        self.esource.grid(row=1, column=5, padx=15)
+
+        Label(self, text="Expose:", font='bold').grid(row=2, column=1, columnspan=2, padx=15)
         self.b1=Button(self, text="Single Frame", command=self.exposeSF)
-        self.b1.grid(row=1, column=3, padx=15)
+        self.b1.grid(row=2, column=3, padx=15)
         self.b2=Button(self, text="CDS", command=self.exposeCDS)
-        self.b2.grid(row=1, column=4, padx=15)
+        self.b2.grid(row=2, column=4, padx=15)
         self.b3=Button(self, text="Ramp", command=self.exposeRamp)
-        self.b3.grid(row=1, column=5, padx=15)
+        self.b3.grid(row=2, column=5, padx=15)
 
-        Label(self, text="Ramp Parameters:", font='bold').grid(row=2, column=1, columnspan=2, padx=15)
-        Label(self, text="Ramps").grid(row=2, column=4, padx=15)
-        Label(self, text="Reads").grid(row=2, column=6, padx=15)
+        Label(self, text="Ramp Parameters:", font='bold').grid(row=3, column=1, columnspan=2, padx=15)
+        Label(self, text="Ramps").grid(row=3, column=4, padx=15)
+        Label(self, text="Reads").grid(row=3, column=6, padx=15)
         self.e1=Entry(self,textvariable=self.nramps)
-        self.e1.grid(row=2, column=3, padx=15)
+        self.e1.grid(row=3, column=3, padx=15)
         self.e2=Entry(self,textvariable=self.nreads)
-        self.e2.grid(row=2, column=5, padx=15)
+        self.e2.grid(row=3, column=5, padx=15)
 
-        Label(self, text="Options:", font='bold').grid(row=3, column=1, columnspan=2, padx=15)
+        Label(self, text="Options:", font='bold').grid(row=4, column=1, columnspan=2, padx=15)
         self.c1 = Checkbutton(self,text="Channel Correct",variable=self.correctData)
-        self.c1.grid(row=3, column=3, columnspan=1,padx=15)
+        self.c1.grid(row=4, column=3, columnspan=1,padx=15)
         self.c2 = Checkbutton(self,text="Histogram",variable=self.histogram)
-        self.c2.grid(row=3, column=4, columnspan=1,padx=15)
+        self.c2.grid(row=4, column=4, columnspan=1,padx=15)
 
 
         self.l1=Label(self, text="",width=50,font=(None,8))
-        self.l1.grid(row=4, column=1, columnspan=6,padx=15)
+        self.l1.grid(row=5, column=1, columnspan=6,padx=15)
 
 
     def connect(self):
@@ -137,7 +145,13 @@ class MainApplication(Frame):
         self.currentStatus = "ready"
         self.status["text"] = "READY"
         self.status["bg"] = "green"
-        	
+    
+    def writeObsdata(self,directory):
+        f = open(directory+"/obsinfo.dat","w")
+        f.write("Observation Type = "+self.obstype.get()+"\n")
+        f.write("Source = "+self.sourcename.get()+"\n")
+        f.close()
+    	
     def exposeSF(self):
         watchpath = path_to_watch+"/Reference"
         before = dict ([(f, None) for f in os.listdir (watchpath)])
@@ -188,6 +202,8 @@ class MainApplication(Frame):
 
         print("Added Directory: "+added[0])
 
+        self.writeObsdata(watchpath+'/'+added[0])
+
         hdu = fits.open(watchpath+"/"+added[0]+"/Result/CDSResult.fits")
         image = hdu[0].data*1.0
         if(self.correctData.get()):
@@ -235,6 +251,8 @@ class MainApplication(Frame):
         self.status["bg"] = "green"
 
         print("Added Directory: "+added[0])
+
+        self.writeObsdata(watchpath+'/'+added[0])
 
         totreads = self.nreads.get()
 
