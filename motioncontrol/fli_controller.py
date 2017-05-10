@@ -20,6 +20,13 @@ try:
 except (ImportError, RuntimeError):
     print "FLI cannot be imported"
 
+class Formatter(object):
+    def __init__(self, im):
+        self.im = im
+    def __call__(self, x, y):
+        z = self.im.get_array()[int(y), int(x)]
+        return 'x={:.01f}, y={:.01f}, z={:.01f}'.format(x, y, z)
+
 
 ###########################################################
 def load_FLIDevices():
@@ -277,10 +284,15 @@ class FLIApplication(_tk.Frame):
         if self.cam and self.foc:
             self.cam.set_exposure(int(self.entryExpVariable.get()))
             img = self.cam.take_photo()
-            
+    
             mpl.close()
             img_rot = np.rot90(img, k=3)
-            mpl.imshow(img_rot, cmap="gray")
+            fig = mpl.figure()
+            ax = fig.add_subplot(1,1,1)
+            im = ax.imshow(img_rot, interpolation='none')
+            ax.format_coord = Formatter(im)
+            #fig.colorbar(img_rot)
+            #mpl.imshow(img_rot, cmap="gray")
             #mpl.imshow(img)
             mpl.show()
 
