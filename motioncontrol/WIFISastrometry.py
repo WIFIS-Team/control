@@ -2,6 +2,14 @@ import matplotlib.pyplot as mpl
 import numpy as np
 import urllib as url
 from astropy.io import fits
+from scipy.optimize import curve_fit
+
+class Formatter(object):
+    def __init__(self, im):
+        self.im = im
+    def __call__(self, x, y):
+        z = self.im.get_array()[int(y), int(x)]
+        return 'x={:.01f}, y={:.01f}, z={:.01f}'.format(x, y, z)
 
 def grabUNSOfield(ra, dec):
     """Takes an ra and dec as grabbed from the telemetry and returns a field
@@ -18,20 +26,20 @@ def grabUNSOfield(ra, dec):
     
     return [name, rad, ded, rmag]
 
-def centroid_finder(img, plot = False):
+def centroid_finder(img, plot = False, verbose=False):
 
     imgsize = img.shape
 
     #find bright pixels
     imgmean = np.mean(img)
     imgstd = np.std(img)
-    brightpix = np.where(img >= imgmean + 2.5* imgstd)
+    nstd = 5
+    if verbose:
+        print "IMG MEAN: %f\nIMGSTD: %f\nCUTOFF: %f" % (imgmean, imgstd,imgmean+nstd*imgstd)
+    brightpix = np.where(img >= imgmean + nstd*imgstd)
     new_img = np.zeros(imgsize)
     for i in range(len(brightpix[0])):
         new_img[brightpix[0][i],brightpix[1][i]] = 1.0
-
-    #mpl.imshow(new_img)
-    #mpl.show()
 
     stars = []
     for x in range(imgsize[0]):
@@ -63,9 +71,13 @@ def centroid_finder(img, plot = False):
         Iarr.append(Isum)
         
     if plot:
-        mpl.imshow(img, cmap = 'gray', interpolation='none')
-        mpl.plot(centroidy, centroidx, 'ro', markeredgecolor = 'r', markerfacecolor='none',\
+        fig = mpl.figure()
+        ax = fig.add_subplot(1,1,1)
+        im = ax.imshow(img, cmap = 'gray', interpolation='none', origin='lower')
+        circ = ax.plot(centroidy, centroidx, 'ro', markeredgecolor = 'r', markerfacecolor='none',\
             markersize = 5)
+        #ax.format_coord = Formatter(im)
+        #fig.colorbar(im)
         mpl.show()
         mpl.close()
 
@@ -92,30 +104,44 @@ def explore_region(x,y, img):
     
     return region, img
 
-def determine_brightest():
+def bright_star(centroids, imshape, mindist = 25):
 
-def write_telemetry(telemDict):
+    Iarr = centroids[2]
+    bright_stars = np.argsort(Iarr)[::-1]
 
-    f = open('/home/utopea/WIFIS-Team/controlcode/BokTelemetry.txt', 'w')
-    
-    for key in telemDict:
-        
-        f.write()
+    starexists = 0
+    for star in bright_stars:
+       if Iarr[star] > 3000:
+           starexists = 1
+           break
 
+    if starexists == 0:
+        return None
 
+    for star in bright_stars:
+        if (centroids[3][star] != 1) and (centroids[0][star] > mindist) and \
+            (centroids[0][star] < imshape[0]-mindist) and \
+            (centroids[1][star] > mindist) and (centroids[1][star] < imshape[1]-mindist):
+            return star
 
+    return None
 
-def check_focus(img, sideregions = 3):
+def gaus(xs, a, sigma, x0):
+    '''Returns a gaussian function with parameters p0
+    p0 [A, sigma, mean]'''
 
-    imgshape = img.shape
-    
-    regionx = imgshape[0]/sideregions
-    regiony = imgshape[1]/sideregions
-    
-    for xreg in range(sideregions):
-        for yreg in range(sideregions):
-            imgregion = img[regionx*xreg:regionx*(xreg+1), regiony*yreg:regiony*(yreg+1)]
-            centroidarr = centroid_finder(imgregion)
+    return a * np.exp((-1.0/2.0) * ((xs - x0)/sigma)**2.0)
+
+def gaussian(xs, p0):
+    first = ((xs - p0[2])/p0[1])**2.0
+
+    return p0[0] * np.exp((-1.0/2.0) * second)
+
+def gaussian_fit(xdata, ydata, p0, gaussian=gaus):
+
+    popt, pcov = curve_fit(gaus, xdata, ydata, p0=p0)
+    return [popt, pcov]
+
 
 def unso(radeg,decdeg,fovam): # RA/Dec in decimal degrees/J2000.0 FOV in arc min. import urllib as url
     
