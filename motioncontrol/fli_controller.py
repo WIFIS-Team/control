@@ -413,7 +413,6 @@ class FLIApplication(_tk.Frame):
             current_focus = self.foc.get_stepper_position() 
         
         print "### FINISHED FOCUSING ####"
-
     
 def run_fli_gui(tkroot):
 
