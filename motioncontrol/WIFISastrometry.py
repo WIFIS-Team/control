@@ -34,10 +34,13 @@ def centroid_finder(img, plot = False, verbose=False):
     imgmean = np.mean(img)
     imgstd = np.std(img)
     nstd = 5
+
     if verbose:
         print "IMG MEAN: %f\nIMGSTD: %f\nCUTOFF: %f" % (imgmean, imgstd,imgmean+nstd*imgstd)
+
     brightpix = np.where(img >= imgmean + nstd*imgstd)
     new_img = np.zeros(imgsize)
+
     for i in range(len(brightpix[0])):
         new_img[brightpix[0][i],brightpix[1][i]] = 1.0
 
@@ -48,7 +51,7 @@ def centroid_finder(img, plot = False, verbose=False):
                 new_star, new_img = explore_region(x,y,new_img)
                 stars.append(new_star)
     
-    centroidx, centroidy, Iarr, Isat = [],[],[],[]
+    centroidx, centroidy, Iarr, Isat, width = [],[],[],[],[]
     for star in stars:
         xsum, ysum, Isum = 0.,0.,0.
         sat = False
@@ -69,7 +72,32 @@ def centroid_finder(img, plot = False, verbose=False):
         centroidx.append(xsum/Isum)
         centroidy.append(ysum/Isum)
         Iarr.append(Isum)
+
+        gx0 = centroidx[-1] - 10
+        gx1 = centroidx[-1] + 10
+        gy0 = centroidy[-1] - 10
+        gy1 = centroidy[-1] + 10
+
+        if centroidx[-1] < 10:
+            gx0 = 0
+        if centroidx[-1] > imgsize[0]-11:
+            gx1 = imgsize[0]-1
         
+        if centroidy[-1] < 10:
+            gy0 = 0
+        if centroidy[-1] > imgsize[1]-11:
+            gy1 = imgsize[1]-1
+        
+        gx = img[gx0:gx1,centroidy[-1]]
+        gy = img[centroidx[-1], gy0:gy1]
+        xs = range(len(gx))
+        ys = range(len(gy))
+
+        #gausx = gaussian_fit(xs, gx, [5000.0,3.0,10.0])
+        #gausy = gaussian_fit(ys, gy, [5000.0,3.0,10.0])
+
+        #width.append(np.mean([gausx[0][1],gausy[0][1]]))
+
     if plot:
         fig = mpl.figure()
         ax = fig.add_subplot(1,1,1)
@@ -81,7 +109,7 @@ def centroid_finder(img, plot = False, verbose=False):
         mpl.show()
         mpl.close()
 
-    return [centroidx,centroidy,Iarr, Isat]
+    return [centroidx,centroidy,Iarr, Isat, width]
 
 def explore_region(x,y, img):
  
@@ -246,8 +274,12 @@ def ra_adjust(ra, d_ra, action = 'add'):
 
 
 if __name__ == '__main__':
+    import glob
+    fls = glob.glob('/Data/WIFISGuider/20170511/platescale*.fits')
 
-    f = fits.open('/Users/relliotmeyer/Desktop/imgtest.fits')
-    img = f[0].data
-
-    x = centroid_finder(img) 
+    for fl in fls:
+        f = fits.open(fl)
+        img = f[0].data
+        print fl
+        print centroid_finder(img) 
+        print "\n"

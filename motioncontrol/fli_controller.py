@@ -16,6 +16,9 @@ import matplotlib.pyplot as mpl
 import Tkinter as _tk
 import WIFISastrometry as WA
 from sys import exit
+import os
+import time
+import wifis_guiding as WG
 
 try:
     import FLI
@@ -51,12 +54,13 @@ def load_FLIDevices():
     if foc != None:
         #foc.home_focuser()
         pass
-
+    if cam:
+        cam.end_exposure()
     # ??? any other default params ???
    
     return [cam, foc, flt]
 
-def measure_focus(img, sideregions = 2, fitwidth = 10, plot=False):
+def measure_focus(img, sideregions = 3, fitwidth = 10, plot=False):
 
     imgshape = img.shape
 
@@ -112,7 +116,17 @@ class FLIApplication(_tk.Frame):
             self.cam, self.foc, self.flt = load_FLIDevices()
         except (ImportError, RuntimeError, NameError):
             self.cam, self.foc, self.flt = [None,None,None]
- 
+
+        try:
+            self.telSock = WG.connect_to_telescope()
+        except:
+            self.telSock = None
+
+        self.todaydate = time.strftime("%Y%m%d")
+        self.direc = u'/Data/WIFISGuider/'+self.todaydate+'/'
+        if not os.path.exists(self.direc):
+            os.makedirs(self.direc)
+
         self.initialize()
 
         # Call the functions to continuously update the reporting fields    
@@ -216,6 +230,11 @@ class FLIApplication(_tk.Frame):
             anchor="center", fg = "black", bg=cambg,font=("Helvetica", 20))
         label.grid(column=1,row=6,columnspan=2, sticky='EW')
 
+        self.imgtypeVariable = _tk.StringVar()
+        self.imgtypeVariable.set("Normal")
+        imgtypeOption = _tk.OptionMenu(self, self.imgtypeVariable, "Normal", "Dark")
+        imgtypeOption.grid(column=2, row=7, sticky='EW')
+
         # Exposure time set entry field
         label = _tk.Label(self, text='Exposure Time', relief='ridge',\
             anchor="center", fg = "black", bg="white",font=("Helvetica", 12))
@@ -257,18 +276,21 @@ class FLIApplication(_tk.Frame):
         self.entryFilepath = _tk.Entry(self, width=30, \
             textvariable=self.entryFilepathVariable)
         self.entryFilepath.grid(column=0, row=8, sticky='EW')
-        self.entryFilepathVariable.set(u"/home/utopea/Desktop/test.fits")
+        self.entryFilepathVariable.set(self.direc+"test.fits")
 
         # Camera buttons
-        _tk.Button(self, text=u"Take Image",\
+        _tk.Button(self, text=u"Save Image",\
             command=self.takeImage).grid(column = 2, row = 8, sticky='EW')
         _tk.Button(self, text=u"Set Temperature",\
             command=self.setTemperature).grid(column = 2, row = 10,\
             sticky='EW')
-        _tk.Button(self, text=u"Check Focus",\
+        _tk.Button(self, text=u"Take Image",\
             command=self.checkFocus).grid(column = 3, row = 7, sticky='EW')
         _tk.Button(self, text=u"Focus Camera",\
             command=self.focusCamera).grid(column = 3, row = 8, sticky='EW')
+        _tk.Button(self, text=u"Centroids",\
+            command=self.checkCentroids).grid(column=3, row=9, sticky='EW')
+
 
         self.grid_columnconfigure(0,weight=1)
         self.grid_columnconfigure(1,weight=1)
@@ -276,7 +298,72 @@ class FLIApplication(_tk.Frame):
         self.grid_columnconfigure(3,weight=1)
         #self.resizable(True, False)
 
+        ##### Telescope Settings #####
+        # Check to see if Camera is connected & colour label appropriately
+        if self.telSock == None:
+            telbg = 'red3'
+        else:
+            telbg = 'green3'
+
+        label = _tk.Label(self, text='Telescope', relief='ridge',\
+            anchor="center", fg = "black", bg=cambg,font=("Helvetica", 20))
+        label.grid(column=4,row=0,columnspan=2, sticky='EW')
+        
+        _tk.Button(self, text=u'Move Telescope',\
+            command=self.moveTelescope).grid(column=4, row=1, sticky='EW')
+
+        _tk.Button(self, text=u'Print Telemetry',\
+            command=self.printTelemetry).grid(column=4, row=3, sticky='EW')    
+
+        _tk.Button(self, text=u'Start Guiding',\
+            command=self.startGuiding).grid(column=5, row=3, sticky='EW')
+        
+        self.guidingOnVariable = _tk.IntVar()
+        _tk.Checkbutton(self, text="Guiding On", \
+            variable=self.guidingOnVariable).grid(column=6, row=3, sticky='EW')
+
+
+        label = _tk.Label(self, text='RA Adj (arcsec)',  relief='ridge',\
+            anchor="center", fg = "black", bg="white",font=("Helvetica", 12))
+        label.grid(column=5,row=1, sticky='EW')
+        
+        label = _tk.Label(self, text='DEC Adj (arcsec)',  relief='ridge',\
+            anchor="center", fg = "black", bg="white",font=("Helvetica", 12))
+        label.grid(column=5,row=2, sticky='EW')
+        
+        self.raAdjVariable = _tk.StringVar()
+        self.raAdj = _tk.Entry(self, width=10, \
+            textvariable=self.raAdjVariable)
+        self.raAdj.grid(column=6, row=1, sticky='EW')
+        self.raAdjVariable.set("0.00")
+    
+        self.decAdjVariable = _tk.StringVar()
+        self.decAdj = _tk.Entry(self, width=10, \
+            textvariable=self.decAdjVariable)
+        self.decAdj.grid(column=6, row=2, sticky='EW')
+        self.decAdjVariable.set("0.00")
+    
     ## Functions to perform the above actions ##
+
+    ## Telescope Functions
+
+    def printTelemetry(self):
+        if self.telSock:
+            telemDict = WG.get_telemetry(self.telSock)
+            WG.clean_telem(telemDict)
+            WG.write_telemetry(telemDict)
+
+    def moveTelescope(self):
+        if self.telSock:
+            WG.move_telescope(self.telSock,float(self.raAdjVariable.get()), \
+                float(self.decAdjVariable.get()))
+
+    def startGuiding(self):
+        if self.telSock:
+            if not self.guidingOnVariable:
+                print "Guiding not enabled. Please check the box."
+            else:
+                WG.wifis_simple_guiding(self.telSock, self.guidingOnVariable)
 
     ## Filter Wheel Functions
     def gotoFilter1(self):
@@ -336,8 +423,15 @@ class FLIApplication(_tk.Frame):
     ## Camera Functions
     def takeImage(self):
         if self.cam:
-            self.cam.set_exposure(int(self.entryExpVariable.get()))
-            img = self.cam.take_photo()  
+            if self.imgtypeVariable.get() == 'Dark':
+                self.cam.end_exposure()
+                self.cam.set_exposure(int(self.entryExpVariable.get()), frametype='dark')
+                img = self.cam.take_photo()  
+                self.cam.set_exposure(int(self.entryExpVariable.get()), frametype='normal')
+            else:
+                self.cam.end_exposure()
+                self.cam.set_exposure(int(self.entryExpVariable.get()), frametype='normal')
+                img = self.cam.take_photo()  
             hdu = fits.PrimaryHDU(img)
             hdu.writeto(self.entryFilepathVariable.get(),clobber=True)
 
@@ -352,24 +446,60 @@ class FLIApplication(_tk.Frame):
     
     def checkFocus(self):
         if self.cam and self.foc:
-            self.cam.set_exposure(int(self.entryExpVariable.get()))
-            img = self.cam.take_photo()
-    
+            if self.imgtypeVariable.get() == 'Dark':
+                self.cam.end_exposure()
+                self.cam.set_exposure(int(self.entryExpVariable.get()), frametype='dark')
+                img = self.cam.take_photo()  
+                self.cam.set_exposure(int(self.entryExpVariable.get()), frametype='normal')
+            else:
+                self.cam.end_exposure()
+                self.cam.set_exposure(int(self.entryExpVariable.get()), frametype='normal')
+                img = self.cam.take_photo()  
+   
             mpl.close()
-            #img_rot = np.rot90(img, k=3)
             fig = mpl.figure()
             ax = fig.add_subplot(1,1,1)
             im = ax.imshow(np.log10(img), interpolation='none', cmap='gray', origin='lower')
             ax.format_coord = Formatter(im)
             fig.colorbar(im)
             mpl.show()
+        return img
+
+    def checkCentroids(self):
+        if self.cam and self.foc:
+            platescale = 0.29125
+            if self.imgtypeVariable.get() == 'Dark':
+                self.cam.end_exposure()
+                self.cam.set_exposure(int(self.entryExpVariable.get()), frametype='dark')
+                img = self.cam.take_photo()  
+                self.cam.set_exposure(int(self.entryExpVariable.get()), frametype='normal')
+            else:
+                self.cam.end_exposure()
+                self.cam.set_exposure(int(self.entryExpVariable.get()), frametype='normal')
+                img = self.cam.take_photo()  
+   
+            centroids = WA.centroid_finder(img)
+            for i in centroids:
+                print i
+            print "X Offset: %f, %f" % (centroids[0][0] - 512,(centroids[0][0] - 512)*platescale)
+            print "Y Offset: %f, %f" % (centroids[1][0] - 512,(centroids[1][0] - 512)*platescale)
+            print '\n'
+
+            mpl.close()
+            fig = mpl.figure()
+            ax = fig.add_subplot(1,1,1)
+            im = ax.imshow(np.log10(img), interpolation='none', cmap='gray', origin='lower')
+            ax.format_coord = Formatter(im)
+            fig.colorbar(im)
+            mpl.show()
+        return img
 
     def focusCamera(self):
 
         current_focus = self.foc.get_stepper_position() 
         step = 200
 
-        self.cam.set_exposure(3000)
+        self.cam.set_exposure(int(self.entryExpVariable.get()))
         img = self.cam.take_photo()
         focus_check1 = measure_focus(img)
         direc = 1 #forward
@@ -378,11 +508,6 @@ class FLIApplication(_tk.Frame):
         mpl.ion()
         fig, ax = mpl.subplots(1,1)
         
-        #ax.hold(True)
-        #mpl.show(False)
-        #mpl.draw()
-
-        #background = fig.canvas.copy_from_bbox(ax.bbox)
         imgplot = ax.imshow(img, interpolation = 'none', cmap='gray')
         fig.canvas.draw()
 
@@ -414,13 +539,6 @@ class FLIApplication(_tk.Frame):
         
         print "### FINISHED FOCUSING ####"
     
-def run_fli_gui(tkroot):
-
-    root = _tk.Toplevel(tkroot)
-    root.title("WIFIS FLI Controller")
-    
-    app = FLIApplication(root)
-
 def run_fli_gui_standalone():
 
     root = _tk.Tk()
@@ -430,59 +548,5 @@ def run_fli_gui_standalone():
 
     root.mainloop()
 
-def focusCamera():
-
-    camSN = 'ML0240613'
-    focSN = 'PDF0184509'
-    foc = FLI.USBFocuser.locate_device(focSN)
-    cam = FLI.USBCamera.locate_device(camSN)
-    
-    current_focus = foc.get_stepper_position() 
-    step = 200
-
-    cam.set_exposure(3000)
-    img = cam.take_photo()
-    focus_check1 = measure_focus(img)
-    direc = 1 #forward
-
-    #fig, ax = mpl.subplots(1,1)
-    #imgplot = ax.imshow(img, interpolation = 'none', cmap='Greys')
-    #mpl.show()
-    #exit()
-
-    #plotting
-    fig, ax = mpl.subplots(1,1)
-    
-    ax.hold(True)
-    mpl.show(False)
-    mpl.draw()
-
-    background = fig.canvas.copy_from_bbox(ax.bbox)
-    imgplot = ax.imshow(img, interpolation = 'none', cmap='gray')
-
-    while step > 5:
-        print "\nSTEP IS: %i\nPOS IS: %i" % (step,current_focus)
-        foc.step_motor(direc*step)
-        img = cam.take_photo()
-
-        #plotting
-        fig.canvas.restore_region(background)
-        ax.draw_artist(imgplot)
-        fig.canvas.blit(ax.bbox)
-
-        focus_check2 = measure_focus(img)
-        print "Old Focus: %f, New Focus: %f" % (focus_check1, focus_check2)
-        #if focus gets go back to beginning, change direction and reduce step
-        if focus_check2 > focus_check1:
-            direc = direc*-1
-            foc.step_motor(direc*step)
-            step = int(step / 2)
-            print "Focus is worse: changing direction!"
-        
-        focus_check1 = focus_check2
-        current_focus = foc.get_stepper_position() 
-    print bright_stars
-        
 if __name__ == "__main__":
     run_fli_gui_standalone()
-

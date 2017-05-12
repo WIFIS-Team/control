@@ -11,7 +11,7 @@ except:
 import WIFISastrometry as WA
 from glob import glob
 from astropy.io import fits
-
+from sys import exit
 
 # !!IMPORTANT!!: Before guiding can work we need to characterize the offset of the 
 #                guiding field from the primary field.
@@ -73,11 +73,12 @@ def connect_to_telescope():
 
     return telSock
 
-def query_telescope(telSock, reqString):
+def query_telescope(telSock, reqString, verbose=True):
     """Sends a query or a command to the telescope and returns the telescope 
     response"""
 
-    print("QUERYING: %s" % (reqString))
+    if verbose:
+        print("QUERYING: %s" % (reqString))
     
     telSock.send(reqString)
     resp = ""
@@ -88,7 +89,7 @@ def query_telescope(telSock, reqString):
         try:
             inStuff = telSock.recv(100)
         except socket.timeout:
-            if resp:
+            if resp and verbose:
                 print("###\tDONE RECEIVING TELEMETRY\t###")
             test = False
             break
@@ -117,7 +118,7 @@ def get_telemetry(telSock):
     reqString = "%s TCS %i REQUEST ALL" % (TELID, REF_NUM)
 
     cleanResp = query_telescope(telSock, reqString)
-    
+    print cleanResp    
     #gather the telemetry into a dict
     telemDict = {}
     II = 0
@@ -154,6 +155,19 @@ def write_telemetry(telemDict):
     
     f.close()
 
+def move_telescope(telSock,ra_adj, dec_adj, verbose=True):
+   
+    if ra_adj > 1000:
+        print "Too large a move in RA. NOT MOVING"
+        return
+    if dec_adj > 1000:
+        print "Too large a move in DEC. NOT MOVING"
+        return
+
+    reqString = "%s TCS %i RADECGUIDE %.2f %.2f" % (TELID, REF_NUM, ra_adj, dec_adj)
+    
+    resp = query_telescope(telSock, reqString, verbose=verbose)
+        
 def plotguiderimage(img):
 
     mpl.imshow(np.log10(img), cmap='gray',interpolation='none',origin='lower')
@@ -162,21 +176,23 @@ def plotguiderimage(img):
 def wifis_simple_guiding(telSock):
 
     #Some constants that need defining
-    plate_scale = 0.2988 #"/pixel
-    exptime = 1000
+    plate_scale = 0.29125 #"/pixel
+    exptime = 1500
 
     dec_offset = 7.00*60.0
     ra_offset = 0.
 
     telemDict = get_telemetry(telSock)
+    clean_telem(telemDict)
     write_telemetry(telemDict)
-    rotangle = float(telemDict['IIS']) - 90.
+    #exit() 
+    #rotangle = float(telemDict['IIS']) - 90.
+    #rotangle_rad = rotangle*np.pi/180.0
+    #rotation_matrix = np.array([[np.cos(rotangle_rad),-1*np.sin(rotangle_rad)],\
+    #    [np.sin(rotangle_rad), np.cos(rotangle_rad)]])
 
-    rotangle_rad = rotangle*np.pi/180.0
-    rotation_matrix = np.array([[np.cos(rotangle_rad),-1*np.sin(rotangle_rad)],\
-        [np.sin(rotangle_rad), np.cos(rotangle_rad)]])
+    #offsets = np.dot(rotation_matrix, [ra_offset, dec_offset])
 
-    offsets = np.dot(rotation_matrix, [ra_offset, dec_offset])
 
     camSN = "ML0240613"
     cam = FLI.USBCamera.locate_device(camSN)
@@ -196,7 +212,7 @@ def wifis_simple_guiding(telSock):
     #img1 = img1 - dark
 
     #check positions of stars    
-    centroidx, centroidy, Iarr, Isat = WA.centroid_finder(img1, plot=False)
+    centroidx, centroidy, Iarr, Isat, width = WA.centroid_finder(img1, plot=False)
     bright_stars = np.argsort(Iarr)[::-1]
 
     #Choose the star to track
@@ -210,74 +226,78 @@ def wifis_simple_guiding(telSock):
     
     stary1 = centroidx[guiding_star]
     starx1 = centroidy[guiding_star] 
-
-    check_guidestar = True
+    boxsize = 30
+    
+    check_guidestar = False
     if check_guidestar:
         mpl.imshow(img1, cmap = 'gray',interpolation='none', origin='lower')
         mpl.plot(starx1, stary1, 'ro', markeredgecolor = 'r', markerfacecolor='none', markersize = 5)
         mpl.show()
 
-    #LOOP: 
-        #Take image, same frame, calculate new position
-        #calculate distance in xy and convert to ra,dec
-        #send command to telescope
-        #sleep for a few seconds?
+    guideplot=False
+    if guideplot:
+        mpl.ion()
+        fig, ax = mpl.subplots(1,1)
+        imgbox = img1[stary1-boxsize:stary1+boxsize, starx1-boxsize:starx1+boxsize]
+        imgplot = ax.imshow(imgbox, interpolation='none', origin='lower')
+        fig.canvas.draw()
+
     while True:
         img = cam.take_photo(shutter='open')
-        boxsize = 30
         imgbox = img[stary1-boxsize:stary1+boxsize, starx1-boxsize:starx1+boxsize]
-       
-        #mpl.imshow(imgbox)
-        #mpl.show()
+      
+        if guideplot:
+            ax.clear()
+            imgplot = ax.imshow(imgbox, interpolation='none', origin='lower')
+            fig.canvas.draw()
         
-        centroidx, centroidy, Iarr, Isat = WA.centroid_finder(imgbox, plot=False)
+        centroidx, centroidy, Iarr, Isat, width = WA.centroid_finder(imgbox, plot=False)
         try:
             new_loc = np.argmax(Iarr)
         except:
             continue
-        newy = centroidx[new_loc]
-        newx = centroidy[new_loc]
+
+        newx = centroidx[new_loc]
+        newy = centroidy[new_loc]
 
         dx = newx - boxsize 
         dy = newy - boxsize
+        d_ra = dx * plate_scale
+        d_dec = dy * plate_scale 
 
-        fl = open('/home/utopea/elliot/guiding_data.txt','a')
-        fl.write("%f\t%f\n" % (dx, dy))
-        fl.close()
-        
-        print dx, dy
-        
-        ###do the conversion to a delta RA and delta DEC
-        #ra_adj = ??
-        #dec_adj = ??
-        
-        ###Send the movement to the telescope
-        #reqString = "%s TCS %i RADECGUIDE %.2f %.2f" % (TELID, REF_NUM, ra_adj, dec_adj)
-        #resp = query_telescope(telSock, reqString)
-        #print "Moving the telescope: %.2f %.2f" % (ra_adj, dec_ajd)
+        #fl = open('/home/utopea/elliot/guiding_data.txt','a')
+        #fl.write("%f\t%f\n" % (dx, dy))
+        #fl.close()
+       
+        #print "X Offset:\t%f\nY Offset:\t%f\nRA ADJ:\t\t%f\nDEC ADJ:\t%f\nPix Width:\t%f\nSEEING:\t\t%f\n" \
+        #    % (dx,dy,d_ra,d_dec,width[0], width[0]*plate_scale)
+        print d_ra, d_dec
+       
+        move_telescope(telSock, -1.0*d_ra, -1.0*d_dec, verbose=False)
+
+        time.sleep(1)
      
-    #resp = query_telescope(telSock, reqString)
+    cam.end_exposure()
 
-
-    #Remember to close the shutter
     return starx1, stary1
     
 if __name__ == '__main__':
 
     telSock = connect_to_telescope()
+
+    #reqString = "BOK TCS 123 REQUEST IIS"
+    #telemDict = get_telemetry(telSock)
     
-    telemDict = get_telemetry(telSock)
-    print(clean_telem(telemDict))
+    #move_telescope(telSock,9.3, -424.1)
+
+    #telemDict = get_telemetry(telSock)
+    #print(clean_telem(telemDict))
     
     wifis_simple_guiding(telSock) 
 
     #ra_adj = 9.00
     #dec_adj = 9.00
     
-    #reqString = "%s TCS %i RADECGUIDE %.2f %.2f" % (TELID, REF_NUM, ra_adj, dec_adj)
-    
-    #resp = query_telescope(telSock, reqString)
-    #print(resp)
     
     #while check_moving(telSock) != '0':
     #    sleep(5)
