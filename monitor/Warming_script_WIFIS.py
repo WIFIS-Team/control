@@ -19,7 +19,7 @@ setpoint_update_interval = 60.0 #seconds between setpoint updates
 dt_above_worksurface = 3.0
 PID = '10,50,0'#PID control parameters to use, first value is P, second value is I, 3rd value is D
 website_update_frequency = 15.0
-activation_temperature = 80.0 #the script will only read sensors below this temperature.
+activation_temperature = 82.0 #the script will only read sensors below this temperature.
 pc_ref_voltage = 5.04
 
 
@@ -189,7 +189,7 @@ def warming_setpoints(): #dynamically generate setpoints for cooling
 def open_serial_port():
     global ser
     global ser_pressure
-    ser.port = "/dev/ttyUSB2"
+    ser.port = "/dev/lakeshore"
     ser.baudrate = 57600 
     ser.bytesize = serial.SEVENBITS
     ser.stopbits=serial.STOPBITS_ONE
@@ -201,7 +201,7 @@ def open_serial_port():
     else:
         print 'Unable to open serial port - T_control'
         
-    ser_pressure.port = '/dev/ttyUSB3'
+    ser_pressure.port = '/dev/pressure'
     ser_pressure.baudrate = 9600
     ser_pressure.timeout=0
     ser_pressure.open()

@@ -117,7 +117,6 @@ class FLIApplication(_tk.Frame):
 
         _tk.Frame.__init__(self,parent)
         self.parent = parent
-        self.queue = Queue.Queue()
 
         #Try to import FLI devices
         try:
@@ -390,19 +389,19 @@ class FLIApplication(_tk.Frame):
                 
     def offsetToGuider(self):
         if self.telSock:
-            WG.move_telescope(self.telSock, -6.0, 424.1) 
+            offsets, x_rot, y_rot = WG.get_rotation_solution(self.telSock)
+            WG.move_telescope(self.telSock, offsets[0], offsets[1]) 
             self.offsetButton.configure(text='Move to WIFIS',\
                 command=self.offsetToWIFIS)
             time.sleep(5)
-            self.checkCentroids()
 
     def offsetToWIFIS(self):
         if self.telSock:
-            WG.move_telescope(self.telSock, 6.0, -424.1)
+            offsets, x_rot, y_rot = WG.get_rotation_solution(self.telSock)
+            WG.move_telescope(self.telSock, -1.0*offsets[0], -1.0*offsets[1])
             self.offsetButton.configure(text='Move to Guider',\
                 command=self.offsetToGuider)
             time.sleep(5)
-            self.checkCentroids()
 
     ## Filter Wheel Functions
     def gotoFilter1(self):
@@ -472,7 +471,7 @@ class FLIApplication(_tk.Frame):
     def writeStepNum(self):
         if self.foc:
             self.stepNumText.set(str(self.foc.get_stepper_position()))
-            self.after(500, self.writeStepNum)
+            self.after(2000, self.writeStepNum)
 
     ## Camera Functions
     def saveImage(self):
@@ -557,10 +556,15 @@ class FLIApplication(_tk.Frame):
                 self.cam.end_exposure()
                 self.cam.set_exposure(int(self.entryExpVariable.get()), frametype='normal')
                 img = self.cam.take_photo()  
-   
+            
+            offsets, x_rot, y_rot = WG.get_rotation_solution(telSock)
+            
+
             centroids = WA.centroid_finder(img)
             for i in centroids:
                 print i
+
+
             print "X Offset: %f, %f" % (centroids[0][0] - 512,(centroids[0][0] - 512)*platescale)
             print "Y Offset: %f, %f" % (centroids[1][0] - 512,(centroids[1][0] - 512)*platescale)
             print '\n'

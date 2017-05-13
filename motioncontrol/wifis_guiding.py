@@ -181,7 +181,6 @@ def get_rotation_solution(telSock):
     offsets = np.array([-6.0, 424.1])
 
     rotangle = float(query_telescope(telSock, 'BOK TCS 123 REQUEST IIS')[-1]) - 90
-    rotangle = 0
 
     rotangle_rad = rotangle*np.pi/180.0
     rotation_matrix = np.array([[np.cos(rotangle_rad),-1*np.sin(rotangle_rad)],\
@@ -271,11 +270,12 @@ def wifis_simple_guiding(telSock):
        
         print "X Offset:\t%f\nY Offset:\t%f\nRA ADJ:\t\t%f\nDEC ADJ:\t%f\nPix Width:\t%f\nSEEING:\t\t%f\n" \
             % (dx,dy,radec[0],radec[1],width[0], width[0]*plate_scale)
+        print d_ra, d_dec
         #print d_ra, d_dec, width[0], width[0]* plate_scale
        
-        #move_telescope(telSock, -1.0*d_ra, -1.0*d_dec, verbose=False)
+        move_telescope(telSock, -1.0*radec[1], -1.0*radec[0], verbose=False)
 
-        time.sleep(1)
+        time.sleep(2)
      
     cam.end_exposure()
 
@@ -325,7 +325,7 @@ def run_guiding(inputguiding, parent, cam, telSock):
     offsets, x_rot, y_rot, stary1, starx1, boxsize, img1  = inputguiding
     plate_scale = 0.29125 #"/pixel
 
-    guideplot=True
+    guideplot=False
     if guideplot:
         mpl.ion()
         fig, ax = mpl.subplots(1,1)
@@ -345,7 +345,7 @@ def run_guiding(inputguiding, parent, cam, telSock):
     try:
         new_loc = np.argmax(Iarr)
     except:
-        pass
+        return
 
     newx = centroidx[new_loc]
     newy = centroidy[new_loc]
@@ -356,7 +356,7 @@ def run_guiding(inputguiding, parent, cam, telSock):
     d_dec = dy * y_rot
     radec = d_ra + d_dec
 
-    print newx, newy, dx, dy, d_ra, d_dec, radec
+    #print newx, newy, dx, dy, d_ra, d_dec, rade
 
     #fl = open('/home/utopea/elliot/guiding_data.txt','a')
     #fl.write("%f\t%f\n" % (dx, dy))
@@ -366,7 +366,7 @@ def run_guiding(inputguiding, parent, cam, telSock):
        % (dx,dy,radec[0],radec[1],width[0], width[0]*plate_scale)
     #print d_ra, d_dec, width[0]
    
-    move_telescope(telSock, -1.0*float(radec[0]), -1.0*float(radec[1]), verbose=False)
+    move_telescope(telSock, -1.0*float(radec[1]), -1.0*float(radec[0]), verbose=False)
 
 
 if __name__ == '__main__':
