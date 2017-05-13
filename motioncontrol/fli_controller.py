@@ -16,9 +16,8 @@ import matplotlib.pyplot as mpl
 import Tkinter as _tk
 import WIFISastrometry as WA
 from sys import exit
-import os
-import time
 import wifis_guiding as WG
+import os, time, threading, Queue
 
 try:
     import FLI
@@ -31,7 +30,6 @@ class Formatter(object):
     def __call__(self, x, y):
         z = self.im.get_array()[int(y), int(x)]
         return 'x={:.01f}, y={:.01f}, z={:.01f}'.format(x, y, z)
-
 
 ###########################################################
 def load_FLIDevices():
@@ -56,11 +54,12 @@ def load_FLIDevices():
         pass
     if cam:
         cam.end_exposure()
+        cam.set_temperature(-20)
     # ??? any other default params ???
    
     return [cam, foc, flt]
 
-def measure_focus(img, sideregions = 3, fitwidth = 10, plot=False):
+def measure_focus(img, sideregions = 3, fitwidth = 10, plot=False, verbose=False):
 
     imgshape = img.shape
 
@@ -69,6 +68,9 @@ def measure_focus(img, sideregions = 3, fitwidth = 10, plot=False):
 
     starsx = np.array([])
     starsy = np.array([])
+    brightestx = 0
+    brightesty = 0
+    bright = 0
     for i in range(sideregions):
         for j in range(sideregions):
             imgregion = img[regionx*i:regionx*(i+1),regiony*j:regiony*(j+1)]
@@ -76,10 +78,15 @@ def measure_focus(img, sideregions = 3, fitwidth = 10, plot=False):
             imgregionshape = imgregion.shape
             brightstar = WA.bright_star(centroids, imgregionshape)
             if brightstar:
-                #print "BRIGHTSTAR: %f %f %f" % (centroids[0][brightstar], \
-                #    centroids[1][brightstar], centroids[2][brightstar])
+                if verbose:
+                    print "BRIGHTSTAR: %f %f %f" % (centroids[0][brightstar], \
+                        centroids[1][brightstar], centroids[2][brightstar])
                 cx = centroids[0][brightstar]
                 cy = centroids[1][brightstar]
+                if centroids[2] > bright:
+                    bright = centroids[2]
+                    brightestx = cx+regionx*i
+                    brightesty = cy+regiony*j
                 star_x = imgregion[cx-fitwidth:cx+fitwidth+1, cy]
                 star_y = imgregion[cx, cy-fitwidth:cy+fitwidth+1]
                 xs = np.arange(len(star_x)) 
@@ -97,7 +104,7 @@ def measure_focus(img, sideregions = 3, fitwidth = 10, plot=False):
     xavg = np.mean(starsx)
     yavg = np.mean(starsy)
 
-    return np.mean([xavg, yavg])
+    return [np.mean([xavg, yavg]), brightestx, brightesty]
 
 ################################################################################
 class FLIApplication(_tk.Frame): 
@@ -110,15 +117,15 @@ class FLIApplication(_tk.Frame):
 
         _tk.Frame.__init__(self,parent)
         self.parent = parent
-        
+        self.queue = Queue.Queue()
+
         #Try to import FLI devices
         try:
             self.cam, self.foc, self.flt = load_FLIDevices()
         except (ImportError, RuntimeError, NameError):
             self.cam, self.foc, self.flt = [None,None,None]
 
-        try:
-            self.telSock = WG.connect_to_telescope()
+        try: self.telSock = WG.connect_to_telescope()
         except:
             self.telSock = None
 
@@ -268,7 +275,7 @@ class FLIApplication(_tk.Frame):
         label.grid(column=0,row=10, sticky='EW')
 
         # Image filepath set entry field
-        label = _tk.Label(self, text='Image Filepath',  relief='ridge',\
+        label = _tk.Label(self, text='Force Filename',  relief='ridge',\
             anchor="center", fg = "black", bg="white",font=("Helvetica", 12))
         label.grid(column=0,row=7, sticky='EW')
 
@@ -276,16 +283,16 @@ class FLIApplication(_tk.Frame):
         self.entryFilepath = _tk.Entry(self, width=30, \
             textvariable=self.entryFilepathVariable)
         self.entryFilepath.grid(column=0, row=8, sticky='EW')
-        self.entryFilepathVariable.set(self.direc+"test.fits")
+        self.entryFilepathVariable.set("")
 
         # Camera buttons
         _tk.Button(self, text=u"Save Image",\
-            command=self.takeImage).grid(column = 2, row = 8, sticky='EW')
+            command=self.saveImage).grid(column = 2, row = 8, sticky='EW')
         _tk.Button(self, text=u"Set Temperature",\
             command=self.setTemperature).grid(column = 2, row = 10,\
             sticky='EW')
         _tk.Button(self, text=u"Take Image",\
-            command=self.checkFocus).grid(column = 3, row = 7, sticky='EW')
+            command=self.takeImage).grid(column = 3, row = 7, sticky='EW')
         _tk.Button(self, text=u"Focus Camera",\
             command=self.focusCamera).grid(column = 3, row = 8, sticky='EW')
         _tk.Button(self, text=u"Centroids",\
@@ -316,12 +323,11 @@ class FLIApplication(_tk.Frame):
             command=self.printTelemetry).grid(column=4, row=3, sticky='EW')    
 
         _tk.Button(self, text=u'Start Guiding',\
-            command=self.startGuiding).grid(column=5, row=3, sticky='EW')
+            command=self.initGuiding).grid(column=5, row=3, sticky='EW')
         
         self.guidingOnVariable = _tk.IntVar()
         _tk.Checkbutton(self, text="Guiding On", \
             variable=self.guidingOnVariable).grid(column=6, row=3, sticky='EW')
-
 
         label = _tk.Label(self, text='RA Adj (arcsec)',  relief='ridge',\
             anchor="center", fg = "black", bg="white",font=("Helvetica", 12))
@@ -342,7 +348,12 @@ class FLIApplication(_tk.Frame):
             textvariable=self.decAdjVariable)
         self.decAdj.grid(column=6, row=2, sticky='EW')
         self.decAdjVariable.set("0.00")
-    
+
+        self.offsetButton = _tk.Button(self, text=u'Move to Guider',\
+            command=self.offsetToGuider)
+        self.offsetButton.grid(column=4, row=2, sticky='EW')
+
+
     ## Functions to perform the above actions ##
 
     ## Telescope Functions
@@ -358,12 +369,40 @@ class FLIApplication(_tk.Frame):
             WG.move_telescope(self.telSock,float(self.raAdjVariable.get()), \
                 float(self.decAdjVariable.get()))
 
-    def startGuiding(self):
+    def initGuiding(self):
         if self.telSock:
-            if not self.guidingOnVariable:
+            if not self.guidingOnVariable.get():
                 print "Guiding not enabled. Please check the box."
             else:
-                WG.wifis_simple_guiding(self.telSock, self.guidingOnVariable)
+                guidingstuff = WG.wifis_simple_guiding_setup(self.telSock, self.cam)
+                self.startGuiding(guidingstuff)
+
+    def startGuiding(self, guidingstuff):
+        if self.telSock:
+            if not self.guidingOnVariable.get():
+                self.cam.end_exposure()
+                print "FINISHED GUIDING"
+                return
+            else:
+                WG.run_guiding(guidingstuff, \
+                    self.parent, self.cam, self.telSock)
+                self.parent.after(1000, lambda: self.startGuiding(guidingstuff))
+                
+    def offsetToGuider(self):
+        if self.telSock:
+            WG.move_telescope(self.telSock, -6.0, 424.1) 
+            self.offsetButton.configure(text='Move to WIFIS',\
+                command=self.offsetToWIFIS)
+            time.sleep(5)
+            self.checkCentroids()
+
+    def offsetToWIFIS(self):
+        if self.telSock:
+            WG.move_telescope(self.telSock, 6.0, -424.1)
+            self.offsetButton.configure(text='Move to Guider',\
+                command=self.offsetToGuider)
+            time.sleep(5)
+            self.checkCentroids()
 
     ## Filter Wheel Functions
     def gotoFilter1(self):
@@ -386,6 +425,22 @@ class FLIApplication(_tk.Frame):
         if self.flt:
             self.flt.set_filter_pos(4)
 
+    def getFilterType(self):
+        if self.flt:
+            filterpos = (self.flt.get_filter_pos() + 1)
+            if filterpos == 1:
+                flttype = 'Z'
+            if filterpos == 2:
+                flttype = 'I'
+            if filterpos == 3:
+                flttype = 'R'
+            if filterpos == 4:
+                flttype = 'G'
+            if filterpos == 5:
+                flttype = 'H-Alpha'
+
+            return flttype
+
     def writeFilterNum(self):
         if self.flt:
             filterpos = (self.flt.get_filter_pos() + 1)
@@ -400,7 +455,6 @@ class FLIApplication(_tk.Frame):
             if filterpos == 5:
                 self.filterNumText.set("H-Alpha")
             self.after(500,self.writeFilterNum)
-
 
     ## Focuser Functions
     def homeFocuser(self):
@@ -421,7 +475,7 @@ class FLIApplication(_tk.Frame):
             self.after(500, self.writeStepNum)
 
     ## Camera Functions
-    def takeImage(self):
+    def saveImage(self):
         if self.cam:
             if self.imgtypeVariable.get() == 'Dark':
                 self.cam.end_exposure()
@@ -432,8 +486,34 @@ class FLIApplication(_tk.Frame):
                 self.cam.end_exposure()
                 self.cam.set_exposure(int(self.entryExpVariable.get()), frametype='normal')
                 img = self.cam.take_photo()  
-            hdu = fits.PrimaryHDU(img)
-            hdu.writeto(self.entryFilepathVariable.get(),clobber=True)
+
+            telemDict = WG.get_telemetry(self.telSock)
+            hduhdr = self.makeHeader(telemDict)
+            hdu = fits.PrimaryHDU(header=hduhdr)
+            hdulist = fits.HDUList([hdu])
+            if self.entryFilepathVariable.get() == "":
+                hdulist.writeto(self.direc+self.todaydate+'T'+time.strftime('%H%M%S'), clobber=True)
+            else:
+                hdulist.writeto(self.entryFilepathVariable.get(),clobber=True)
+                self.entryFilepathVariable.set("")
+
+    def makeHeader(self, telemDict):
+
+        hdr = fits.Header()
+        hdr['DATE'] = self.todaydate 
+        hdr['SCOPE'] = 'Bok Telescope, Steward Observatory'
+        hdr['ObsTime'] = time.strftime('%H:%M"%S')
+        hdr['ExpTime'] = self.entryExpVariable.get()
+        hdr['RA'] = telemDict['RA']
+        hdr['DEC'] = telemDict['DEC']
+        hdr['IIS'] = telemDict['IIS']
+        hdr['EL'] = telemDict['EL']
+        hdr['AZ'] = telemDict['AZ']
+        hdr['Filter'] = self.getFilterType()
+        hdr['FocPos'] = self.foc.get_stepper_position()
+        hdr['AM'] = telemDict['SECZ']
+
+        return hdr
 
     def setTemperature(self):
         if self.cam:
@@ -444,7 +524,7 @@ class FLIApplication(_tk.Frame):
             self.ccdTempText.set(str(self.cam.get_temperature()))
             self.after(1000,self.getCCDTemp)        
     
-    def checkFocus(self):
+    def takeImage(self):
         if self.cam and self.foc:
             if self.imgtypeVariable.get() == 'Dark':
                 self.cam.end_exposure()
@@ -501,30 +581,31 @@ class FLIApplication(_tk.Frame):
 
         self.cam.set_exposure(int(self.entryExpVariable.get()))
         img = self.cam.take_photo()
-        focus_check1 = measure_focus(img)
+        focus_check1, bx, by = measure_focus(img)
         direc = 1 #forward
 
         #plotting
         mpl.ion()
         fig, ax = mpl.subplots(1,1)
         
-        imgplot = ax.imshow(img, interpolation = 'none', cmap='gray')
+        imgplot = ax.imshow(img[bx-20:bx+20,by-20:by+20], interpolation = 'none', origin='lower')
         fig.canvas.draw()
 
         while step > 5:
-            print "\nSTEP IS: %i\nPOS IS: %i" % (step,current_focus)
+            print "STEP IS: %i\nPOS IS: %i" % (step,current_focus)
             self.foc.step_motor(direc*step)
             img = self.cam.take_photo()
 
             #plotting
             ax.clear()
-            imgplot = ax.imshow(img, interpolation = 'none', cmap='gray')
+            imgplot = ax.imshow(img[bx-20:bx+20, by-20:by+20], interpolation = 'none', \
+                origin='lower')
             fig.canvas.draw()
             #fig.canvas.restore_region(background)
             #ax.draw_artist(imgplot)
             #fig.canvas.blit(ax.bbox)
 
-            focus_check2 = measure_focus(img)
+            focus_check2,bx2,by2 = measure_focus(img)
 
             print "Old Focus: %f, New Focus: %f" % (focus_check1, focus_check2)
             #if focus gets go back to beginning, change direction and reduce step
@@ -538,11 +619,33 @@ class FLIApplication(_tk.Frame):
             current_focus = self.foc.get_stepper_position() 
         
         print "### FINISHED FOCUSING ####"
-    
+
+'''
+class ThreadedClient(threading.Thread):
+
+    def __init__(self, queue, fcn):
+        threading.Thread.__init__(self)
+        self.queue = queue
+        self.fcn = fcn
+
+    def run(self):
+        time.sleep(1)
+        self.queue.put(self.fcn())
+
+def spawnthread(queue,master,fcn):
+   thread = ThreadedClient(queue, fcn)
+    thread.start()
+    periodic_call(master, thread)
+
+def periodic_call(master, thread):
+    if (thread.is_alive()):
+        master.after(100, lambda: periodic_call(master, thread))
+'''
+
 def run_fli_gui_standalone():
 
     root = _tk.Tk()
-    root.title("WIFIS FLI Controller")
+    root.title("WIFIS Guider Control")
     
     app = FLIApplication(root)
 

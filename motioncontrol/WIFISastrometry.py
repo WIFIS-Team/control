@@ -93,11 +93,13 @@ def centroid_finder(img, plot = False, verbose=False):
         xs = range(len(gx))
         ys = range(len(gy))
 
-        #gausx = gaussian_fit(xs, gx, [5000.0,3.0,10.0])
-        #gausy = gaussian_fit(ys, gy, [5000.0,3.0,10.0])
+        try:
+            gausx = gaussian_fit(xs, gx, [5000.0,3.0,10.0])
+            gausy = gaussian_fit(ys, gy, [5000.0,3.0,10.0])
 
-        #width.append(np.mean([gausx[0][1],gausy[0][1]]))
-
+            width.append(np.mean([gausx[0][1],gausy[0][1]]))
+        except:
+            width.append(0)
     if plot:
         fig = mpl.figure()
         ax = fig.add_subplot(1,1,1)
