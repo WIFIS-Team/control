@@ -7,7 +7,7 @@ do
     scp -i /home/utopea/.ssh/thor_rsa "/home/utopea/WIFIS-Team/controlcode/monitor/history_plot_heater.jpg" suresh@thor.dunlap.utoronto.ca:Sites/wifis/
     scp -i /home/utopea/.ssh/thor_rsa "/home/utopea/WIFIS-Team/controlcode/monitor/history_plot_Tgrad.jpg" suresh@thor.dunlap.utoronto.ca:Sites/wifis/
     scp -i /home/utopea/.ssh/thor_rsa "/home/utopea/WIFIS-Team/controlcode/monitor/pressure_plot.jpg" suresh@thor.dunlap.utoronto.ca:Sites/wifis/
-    scp -i /home/utopea/.ssh/thor_rsa "/home/utopea/WIFIS-Team/controlcode/monitor/Fri Apr 28 22-08-01 2017.csv" suresh@thor.dunlap.utoronto.ca:Dropbox/WIFIS-Electronics/temp_files/
+    scp -i /home/utopea/.ssh/thor_rsa "/home/utopea/WIFIS-Team/controlcode/monitor/Tue Jun  6 14-03-40 2017.csv" suresh@thor.dunlap.utoronto.ca:Dropbox/WIFIS-Electronics/temp_files/
 
     sleep 20
 done

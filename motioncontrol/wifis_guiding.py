@@ -73,7 +73,7 @@ def connect_to_telescope():
 
     return telSock
 
-def query_telescope(telSock, reqString, verbose=True):
+def query_telescope(telSock, reqString, verbose=True, telem=False):
     """Sends a query or a command to the telescope and returns the telescope 
     response"""
 
@@ -100,11 +100,19 @@ def query_telescope(telSock, reqString, verbose=True):
             test = False
     
     #Turn string into list, separated by whitespace
-    resp = resp.split(' ')
+    #for i,j in enumerate(resp):
+        #print i,j 
+    if telem:
+        resp1 = resp[:74]
+        resp2 = resp[87:]
+        respf = resp1 + resp2
+        respf = respf.split(' ')
+    else:
+        respf = resp.split(' ')
     cleanResp = []
 
     #Remove empty elements and newlines
-    for char in resp:
+    for char in respf:
         if char != '' and not char.endswith("\n"):
             cleanResp.append(char)
         elif char.endswith("\n"):
@@ -118,7 +126,7 @@ def get_telemetry(telSock, verbose=True):
     if verbose:
         reqString = "%s TCS %i REQUEST ALL" % (TELID, REF_NUM)
 
-    cleanResp = query_telescope(telSock, reqString)
+    cleanResp = query_telescope(telSock, reqString, telem=True)
     #gather the telemetry into a dict
     telemDict = {}
     II = 0
@@ -178,7 +186,7 @@ def get_rotation_solution(telSock):
     plate_scale = 0.29125
     x_sol = np.array([0.0, plate_scale])
     y_sol = np.array([plate_scale, 0.0])
-    offsets = np.array([-6.0, 424.1])
+    offsets = np.array([-4.0, 414.1]) #old -6.0, 424.1
 
     rotangle = float(query_telescope(telSock, 'BOK TCS 123 REQUEST IIS')[-1]) - 90
 
@@ -365,15 +373,23 @@ def run_guiding(inputguiding, parent, cam, telSock):
     print "X Offset:\t%f\nY Offset:\t%f\nRA ADJ:\t\t%f\nDEC ADJ:\t%f\nPix Width:\t%f\nSEEING:\t\t%f\n" \
        % (dx,dy,radec[0],radec[1],width[0], width[0]*plate_scale)
     #print d_ra, d_dec, width[0]
-   
-    move_telescope(telSock, -1.0*float(radec[1]), -1.0*float(radec[0]), verbose=False)
-
+    if (abs(float(radec[1])) < 0.5) and (abs(float(radec[0]) < 0.5)):
+        print "NOT MOVING, TOO SMALL SHIFT"
+        pass
+    elif abs(float(radec[1])) < 0.5:
+        print "MOVING DEC ONLY"
+        move_telescope(telSock, 0.0, -1.0*float(radec[0]), verbose=False)
+    elif abs(float(radec[0])) < 0.5:
+        print "MOVING RA ONLY"
+        move_telescope(telSock, -1.0*float(radec[1]),0.0, verbose=False)
+    else:
+        move_telescope(telSock, -1.0*float(radec[1]), -1.0*float(radec[0]), verbose=False)
 
 if __name__ == '__main__':
 
     telSock = connect_to_telescope()
-
+    x = get_telemetry(telSock)
     #reqString = "BOK TCS 123 REQUEST IIS"
     #offset, xrot, yrot = get_rotation_solution(telSock)
     
-    wifis_simple_guiding(telSock) 
+    #wifis_simple_guiding(telSock) 

@@ -19,7 +19,7 @@ setpoint_update_interval = 60.0 #seconds between setpoint updates
 dt_above_worksurface = 3.0
 PID = '10,50,0'#PID control parameters to use, first value is P, second value is I, 3rd value is D
 website_update_frequency = 15.0
-activation_temperature = 82.0 #the script will only read sensors below this temperature.
+activation_temperature = 80.0 #the script will only read sensors below this temperature.
 pc_ref_voltage = 5.04
 
 

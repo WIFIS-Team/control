@@ -319,7 +319,7 @@ class FLIApplication(_tk.Frame):
             command=self.moveTelescope).grid(column=4, row=1, sticky='EW')
 
         _tk.Button(self, text=u'Print Telemetry',\
-            command=self.printTelemetry).grid(column=4, row=3, sticky='EW')    
+            command=self.printTelemetry).grid(column=4, row=4, sticky='EW')    
 
         _tk.Button(self, text=u'Start Guiding',\
             command=self.initGuiding).grid(column=5, row=3, sticky='EW')
@@ -352,6 +352,9 @@ class FLIApplication(_tk.Frame):
             command=self.offsetToGuider)
         self.offsetButton.grid(column=4, row=2, sticky='EW')
 
+        self.offsetButton = _tk.Button(self, text=u'Move to WIFIS',\
+            command=self.offsetToWIFIS)
+        self.offsetButton.grid(column=4, row=3, sticky='EW')
 
     ## Functions to perform the above actions ##
 
@@ -391,16 +394,16 @@ class FLIApplication(_tk.Frame):
         if self.telSock:
             offsets, x_rot, y_rot = WG.get_rotation_solution(self.telSock)
             WG.move_telescope(self.telSock, offsets[0], offsets[1]) 
-            self.offsetButton.configure(text='Move to WIFIS',\
-                command=self.offsetToWIFIS)
+            #self.offsetButton.configure(text='Move to WIFIS',\
+            #    command=self.offsetToWIFIS)
             time.sleep(5)
 
     def offsetToWIFIS(self):
         if self.telSock:
             offsets, x_rot, y_rot = WG.get_rotation_solution(self.telSock)
             WG.move_telescope(self.telSock, -1.0*offsets[0], -1.0*offsets[1])
-            self.offsetButton.configure(text='Move to Guider',\
-                command=self.offsetToGuider)
+            #self.offsetButton.configure(text='Move to Guider',\
+            #    command=self.offsetToGuider)
             time.sleep(5)
 
     ## Filter Wheel Functions
@@ -488,13 +491,23 @@ class FLIApplication(_tk.Frame):
 
             telemDict = WG.get_telemetry(self.telSock)
             hduhdr = self.makeHeader(telemDict)
-            hdu = fits.PrimaryHDU(header=hduhdr)
-            hdulist = fits.HDUList([hdu])
+            #hdu = fits.PrimaryHDU(header=hduhdr)
+            #hdulist = fits.HDUList([hdu])
             if self.entryFilepathVariable.get() == "":
-                hdulist.writeto(self.direc+self.todaydate+'T'+time.strftime('%H%M%S'), clobber=True)
+                fits.writeto(self.direc+self.todaydate+'T'+time.strftime('%H%M%S')+'.fits', img, hduhdr,clobber=True)
+                #hdulist.writeto(self.direc+self.todaydate+'T'+time.strftime('%H%M%S')+'.fits', clobber=True)
             else:
-                hdulist.writeto(self.entryFilepathVariable.get(),clobber=True)
+                fits.writeto(self.entryFilepathVariable.get()+".fits", img, hduhdr,clobber=True)
+                #hdulist.writeto(self.entryFilepathVariable.get(),clobber=True)
                 self.entryFilepathVariable.set("")
+
+            mpl.close()
+            fig = mpl.figure()
+            ax = fig.add_subplot(1,1,1)
+            im = ax.imshow(np.log10(img), interpolation='none', cmap='gray', origin='lower')
+            ax.format_coord = Formatter(im)
+            fig.colorbar(im)
+            mpl.show()
 
     def makeHeader(self, telemDict):
 
@@ -557,16 +570,17 @@ class FLIApplication(_tk.Frame):
                 self.cam.set_exposure(int(self.entryExpVariable.get()), frametype='normal')
                 img = self.cam.take_photo()  
             
-            offsets, x_rot, y_rot = WG.get_rotation_solution(telSock)
+            offsets, x_rot, y_rot = WG.get_rotation_solution(self.telSock)
             
 
             centroids = WA.centroid_finder(img)
             for i in centroids:
                 print i
 
+            b = np.argmax(centroids[2])
 
-            print "X Offset: %f, %f" % (centroids[0][0] - 512,(centroids[0][0] - 512)*platescale)
-            print "Y Offset: %f, %f" % (centroids[1][0] - 512,(centroids[1][0] - 512)*platescale)
+            print "X Offset: %f, %f" % (centroids[0][b] - 512,(centroids[0][b] - 512)*platescale)
+            print "Y Offset: %f, %f" % (centroids[1][b] - 512,(centroids[1][b] - 512)*platescale)
             print '\n'
 
             mpl.close()
