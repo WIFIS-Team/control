@@ -18,6 +18,7 @@ import WIFISastrometry as WA
 from sys import exit
 import wifis_guiding as WG
 import os, time, threading, Queue
+from glob import glob
 
 try:
     import FLI
@@ -49,6 +50,7 @@ def load_FLIDevices():
     ## Set default parameters for the FLI devices and ensure 
     if flt != None:
         flt.set_filter_pos(0)
+        pass
     if foc != None:
         #foc.home_focuser()
         pass
@@ -77,7 +79,7 @@ def measure_focus(img, sideregions = 3, fitwidth = 10, plot=False, verbose=False
             centroids = WA.centroid_finder(imgregion, plot=False)
             imgregionshape = imgregion.shape
             brightstar = WA.bright_star(centroids, imgregionshape)
-            if brightstar:
+            if brightstar != None:
                 if verbose:
                     print "BRIGHTSTAR: %f %f %f" % (centroids[0][brightstar], \
                         centroids[1][brightstar], centroids[2][brightstar])
@@ -117,6 +119,8 @@ class FLIApplication(_tk.Frame):
 
         _tk.Frame.__init__(self,parent)
         self.parent = parent
+        self.deltRA = 0
+        self.deltDEC = 0
 
         #Try to import FLI devices
         try:
@@ -166,6 +170,7 @@ class FLIApplication(_tk.Frame):
         label.grid(column=0,row=1, sticky='EW')
 
         self.filterNumText = _tk.StringVar()        
+        self.filterNumText.set(self.getFilterType())
         label = _tk.Label(self, textvariable=self.filterNumText, \
             anchor="center", fg = "black", bg="white",font=("Helvetica", 12))
         label.grid(column=0,row=2, sticky='EW')
@@ -353,7 +358,7 @@ class FLIApplication(_tk.Frame):
             anchor="center", fg = "black",font=("Helvetica", 12))
         label.grid(column=5,row=4, sticky='EW')
         self.guideTargetVariable = _tk.StringVar()
-        self.guideTarget = _tk.Entry(self, width=7, \
+        self.guideTarget = _tk.Entry(self, width=15, \
             textvariable=self.guideTargetVariable)
         self.guideTarget.grid(column=6, row=4, sticky='EW')
         self.guideTargetVariable.set("")
@@ -362,19 +367,19 @@ class FLIApplication(_tk.Frame):
             anchor="center", fg = "black",font=("Helvetica", 12))
         label.grid(column=5,row=5, sticky='EW')
         self.guideExpVariable = _tk.StringVar()
-        self.guideExp = _tk.Entry(self, width=5, \
+        self.guideExp = _tk.Entry(self, width=15, \
             textvariable=self.guideExpVariable)
         self.guideExp.grid(column=6, row=5, sticky='EW')
         self.guideExpVariable.set("1500")
 
         self.raAdjVariable = _tk.StringVar()
-        self.raAdj = _tk.Entry(self, width=5, \
+        self.raAdj = _tk.Entry(self, width=15, \
             textvariable=self.raAdjVariable)
         self.raAdj.grid(column=6, row=1, sticky='EW')
         self.raAdjVariable.set("0.00")
     
         self.decAdjVariable = _tk.StringVar()
-        self.decAdj = _tk.Entry(self, width=5, \
+        self.decAdj = _tk.Entry(self, width=15, \
             textvariable=self.decAdjVariable)
         self.decAdj.grid(column=6, row=2, sticky='EW')
         self.decAdjVariable.set("0.00")
@@ -405,23 +410,6 @@ class FLIApplication(_tk.Frame):
             WG.move_telescope(self.telSock,float(self.raAdjVariable.get()), \
                 float(self.decAdjVariable.get()))
 
-    def initGuiding(self):
-        if self.telSock:
-            if not self.guidingOnVariable.get():
-                self.guidingOnVariable.set(1)
-                print "###### STARTING GUIDING ######"
-                #print "Guiding not enabled. Please check the box."
-            elif self.guidingOnVariable.get():
-                self.guidingOnVariable.set(0)
-                return
-            elif not self.guideTargetVariable.get():
-                print "Please enter a target for guiding"
-            else:
-                gfls = self.checkGuideVariable()
-                guidingstuff = WG.wifis_simple_guiding_setup(self.telSock, self.cam, \
-                    int(self.guideExpVariable.get()),gfls)
-                self.startGuiding(guidingstuff)
-
     #def initGuiding(self):
     #    if self.telSock:
     #        if not self.guidingOnVariable.get():
@@ -433,16 +421,22 @@ class FLIApplication(_tk.Frame):
     #            guidingstuff = WG.wifis_simple_guiding_setup(self.telSock, self.cam, \
     #                int(self.guideExpVariable.get()),gfls)
     #            self.startGuiding(guidingstuff)
-
-    def checkGuideVariable(self):
-        gfl = '/home/utopea/elliot/'+time.strftime('%Y%m%d')+'_'+self.guideTargetVariable.get()
-        guidefls = glob('/home/utopea/elliot/guidefiles/*.txt')
-        if gfl not in guidefls:
-            "OBJECT NOT OBSERVED, INITIALIZING GUIDE STAR"
-            return gfl, False
-        else:
-            print "OBJECT ALREADY OBSERVED, USING ORIGINAL GUIDE STAR"
-            return gfl, True
+    
+    def initGuiding(self):
+        if self.telSock:
+            self.deltRA = 0
+            self.deltDEC = 0
+            if self.guidingOnVariable.get():
+                self.guidingOnVariable.set(0)
+                return
+            elif not self.guidingOnVariable.get():
+                self.guidingOnVariable.set(1)
+                print "###### STARTING GUIDING ######"
+                gfls = self.checkGuideVariable()
+                guidingstuff = WG.wifis_simple_guiding_setup(self.telSock, self.cam, \
+                    int(self.guideExpVariable.get()),gfls)
+                self.startGuiding(guidingstuff)
+                #print "Guiding not enabled. Please check the box."
 
     def startGuiding(self, guidingstuff):
         if self.telSock:
@@ -451,9 +445,24 @@ class FLIApplication(_tk.Frame):
                 print "FINISHED GUIDING"
                 return
             else:
-                WG.run_guiding(guidingstuff, \
+                dRA, dDEC = WG.run_guiding(guidingstuff, \
                     self.parent, self.cam, self.telSock)
-                self.parent.after(1000, lambda: self.startGuiding(guidingstuff))
+                self.deltRA += dRA
+                self.deltDEC += dDEC
+                print "DELTRA:\t\t%f\nDELTDEC:\t%f\n" % (self.deltRA, self.deltDEC)
+                self.parent.after(3000, lambda: self.startGuiding(guidingstuff))
+
+    def checkGuideVariable(self):
+        gfl = '/home/utopea/elliot/guidefiles/'+time.strftime('%Y%m%d')+'_'+self.guideTargetVariable.get()+'.txt'
+        guidefls = glob('/home/utopea/elliot/guidefiles/*.txt')
+        if self.guideTargetVariable.get() == '':
+            return '', False
+        if gfl not in guidefls:
+            print "OBJECT NOT OBSERVED, INITIALIZING GUIDE STAR"
+            return gfl, False
+        else:
+            print "OBJECT ALREADY OBSERVED, USING ORIGINAL GUIDE STAR"
+            return gfl, True
                 
     def offsetToGuider(self):
         if self.telSock:
@@ -657,7 +666,10 @@ class FLIApplication(_tk.Frame):
 
             barr = np.argsort(centroids[2])[::-1]
             b = np.argmax(centroids[2])
-       
+      
+            print "X pixelscale: %f, %f" % (x_rot[0], x_rot[1])
+            print "Y pixelscale: %f, %f" % (y_rot[0], y_rot[1])
+
             d = -1
             for i,b in enumerate(barr):  
                 if i > 5:
@@ -681,6 +693,13 @@ class FLIApplication(_tk.Frame):
                 fig.colorbar(im)
                 mpl.show()
 
+            b = np.argmax(centroids[2])
+            offsetx = centroids[0][b] - 512
+            offsety = centroids[1][b] - 512
+            dx = offsetx * x_rot
+            dy = offsety * y_rot
+            radec = dx + dy
+
         return img, d*radec[1], d*radec[0]
 
     def focusCamera(self):
@@ -696,14 +715,15 @@ class FLIApplication(_tk.Frame):
         #plotting
         mpl.ion()
         fig, ax = mpl.subplots(1,1)
-        
+       
         imgplot = ax.imshow(img[bx-20:bx+20,by-20:by+20], interpolation = 'none', origin='lower')
         fig.canvas.draw()
-
         while step > 5:
-            print "STEP IS: %i\nPOS IS: %i" % (step,current_focus)
             self.foc.step_motor(direc*step)
             img = self.cam.take_photo()
+
+            print "STEP IS: %i\nPOS IS: %i" % (step,current_focus)
+            print "Old Focus: %f, New Focus: %f" % (focus_check1, focus_check2)
 
             #plotting
             ax.clear()
@@ -716,40 +736,17 @@ class FLIApplication(_tk.Frame):
 
             focus_check2,bx2,by2 = measure_focus(img)
 
-            print "Old Focus: %f, New Focus: %f" % (focus_check1, focus_check2)
             #if focus gets go back to beginning, change direction and reduce step
             if focus_check2 > focus_check1:
                 direc = direc*-1
-                #self.foc.step_motor(direc*step)
+                self.foc.step_motor(direc*step)
                 step = int(step / 2)
-                print "Focus is worse: changing direction!"
+                print "Focus is worse: changing direction!\n"
             
             focus_check1 = focus_check2
             current_focus = self.foc.get_stepper_position() 
         
         print "### FINISHED FOCUSING ####"
-
-'''
-class ThreadedClient(threading.Thread):
-
-    def __init__(self, queue, fcn):
-        threading.Thread.__init__(self)
-        self.queue = queue
-        self.fcn = fcn
-
-    def run(self):
-        time.sleep(1)
-        self.queue.put(self.fcn())
-
-def spawnthread(queue,master,fcn):
-   thread = ThreadedClient(queue, fcn)
-    thread.start()
-    periodic_call(master, thread)
-
-def periodic_call(master, thread):
-    if (thread.is_alive()):
-        master.after(100, lambda: periodic_call(master, thread))
-'''
 
 def run_fli_gui_standalone():
 

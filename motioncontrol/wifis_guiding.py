@@ -196,8 +196,10 @@ def get_rotation_solution(telSock):
     rotangle_rad = rotangle*np.pi/180.0
     rotation_matrix = np.array([[np.cos(rotangle_rad),1*np.sin(rotangle_rad)],\
         [-1*np.sin(rotangle_rad), np.cos(rotangle_rad)]])
+    rotation_matrix_offsets = np.array([[np.cos(rotangle_rad),-1*np.sin(rotangle_rad)],\
+        [1*np.sin(rotangle_rad), np.cos(rotangle_rad)]])
 
-    offsets = np.dot(rotation_matrix, offsets)
+    offsets = np.dot(rotation_matrix_offsets, offsets)
     x_rot = np.dot(rotation_matrix, x_sol)
     y_rot = np.dot(rotation_matrix, y_sol)
 
@@ -329,19 +331,19 @@ def wifis_simple_guiding_setup(telSock, cam, exptime, gfls):
     boxsize = 30
    
     #Checks to see if there exists a guiding star for this target
-    if gfls[1]:
+    if gfls[1] and (gfls[0] != ''):
         #Sets the larger boxsize for guiding setup
         boxsize_f = 50
         
         #Get the original guidestar coordinates.
-        f = open(gfl, 'r')
+        f = open(gfls[0], 'r')
         lines = f.readlines()
         spl = lines[0].split()
-        starx1old, stary1old = spl[0], spl[1]
+        starx1old, stary1old = int(spl[0]), int(spl[1])
 
         #Create box around star and check if star is in box. If star, correct it. If no star, reinitialize guiding
         imgbox = img1[stary1old-boxsize_f:stary1old+boxsize_f, starx1old-boxsize_f:starx1old+boxsize_f]
-        worked = checkstarinbox(imgbox, boxsize_f)
+        worked = checkstarinbox(imgbox, boxsize_f, telSock)
 
         if worked:
             #If we could put a star at the right coordinates, set the guiding coords to the old coords
@@ -350,17 +352,20 @@ def wifis_simple_guiding_setup(telSock, cam, exptime, gfls):
         else:
             #If we could not move a star to the right coordinates, then restart guiding for this object
             print "COULD NOT FIND OLD GUIDESTAR IN IMAGE...SELECTING NEW GUIDESTAR"
-            starx1, stary1 = findguidestar(img1)
+            starx1, stary1 = findguidestar(img1, gfls)
             
     else:
         #restart guiding by selecting a new guide star in the image 
-        starx1, stary1 = findguidestar(img1)
+        starx1, stary1 = findguidestar(img1,gfls)
     
     #Make sure were guiding on an actual star. If not maybe change the exptime for guiding.
     check_guidestar = True
     if check_guidestar:
-        imgbox = img[stary1-boxsize:stary1+boxsize, starx1-boxsize:starx1+boxsize]
+        img2 = cam.take_photo()
+        mpl.ion()
+        imgbox = img2[stary1-boxsize:stary1+boxsize, starx1-boxsize:starx1+boxsize]
         mpl.imshow(imgbox, interpolation='none', origin='lower')
+        mpl.plot([boxsize],[boxsize], 'rx', markersize=10)
         #mpl.plot(starx1, stary1, 'ro', markeredgecolor = 'r', markerfacecolor='none', markersize = 5)
         mpl.show()
 
@@ -368,7 +373,7 @@ def wifis_simple_guiding_setup(telSock, cam, exptime, gfls):
 
     return [offsets, x_rot, y_rot, stary1, starx1, boxsize, img1]
 
-def findguidestar(img1):
+def findguidestar(img1, gfls):
     #check positions of stars    
     centroidx, centroidy, Iarr, Isat, width = WA.centroid_finder(img1, plot=False)
     bright_stars = np.argsort(Iarr)[::-1]
@@ -386,16 +391,19 @@ def findguidestar(img1):
     starx1 = centroidy[guiding_star] 
 
     #Record this initial setup in the file
-    f = open(gfl, 'w')
-    f.write('%i\t%i\n' % (starx1, stary1))
-    f.close()
+    if gfls[0] != '':
+        f = open(gfls[0], 'w')
+        f.write('%i\t%i\n' % (starx1, stary1))
+        f.close()
     
     return starx1, stary1
 
-def checkstarinbox(imgbox, boxsize):
+def checkstarinbox(imgbox, boxsize, telSock):
 
     platescale = 0.29125 #"/pixel
 
+    offsets, x_rot, y_rot = get_rotation_solution(telSock)
+    
     #Try centroiding
     centroidx, centroidy, Iarr, Isat, width = WA.centroid_finder(imgbox, plot=False)
     try:
@@ -437,6 +445,8 @@ def checkstarinbox(imgbox, boxsize):
         else:
             move_telescope(telSock,r*radec[1],d*radec[0], verbose=False)
             pass
+    
+    time.sleep(2)
 
     return True
 
@@ -482,32 +492,43 @@ def run_guiding(inputguiding, parent, cam, telSock):
     radec = d_ra + d_dec
 
     #Do the movement
-    print "X Offset:\t%f\nY Offset:\t%f\nRA ADJ:\t\t%f\nDEC ADJ:\t%f\nPix Width:\t%f\nSEEING:\t\t%f\n" \
+    #print "X Offset:\t%f\nY Offset:\t%f\nRA ADJ:\t\t%f\nDEC ADJ:\t%f\nPix Width:\t%f\nSEEING:\t\t%f\nDELTRA:\t\t%f\nDELTDEC:\t%f" \
+    #   % (dx,dy,radec[1],radec[0],width[0], width[0]*plate_scale,deltRA, deltDEC)
+    print "X Offset:\t%f\nY Offset:\t%f\nRA ADJ:\t\t%f\nDEC ADJ:\t%f\nPix Width:\t%f\nSEEING:\t\t%f" \
        % (dx,dy,radec[1],radec[0],width[0], width[0]*plate_scale)
 
-    lim = 0.5
+    lim = 0.8
     r = -1
     d = -1
-    #print d_ra, d_dec, width[0]
+
+    deltRA = 0
+    deltDEC = 0
+
     guidingon=True
     if guidingon:
         if (abs(radec[1]) < lim) and (abs(radec[0]) < lim):
-            print "NOT MOVING, TOO SMALL SHIFT"
+            print "NOT MOVING, TOO SMALL SHIFT\n"
             pass
         elif abs(radec[1]) < lim:
-            print "MOVING DEC ONLY"
+            print "MOVING DEC ONLY\n"
+            deltDEC = d*radec[0]
             move_telescope(telSock, 0.0, d*radec[0], verbose=False)
         elif abs(radec[0]) < lim:
-            print "MOVING RA ONLY"
+            print "MOVING RA ONLY\n"
+            deltRA = r*radec[1]
             move_telescope(telSock, r*radec[1], 0.0, verbose=False)
         else:
+            deltRA = r*radec[1]
+            deltDEC = d*radec[0]
             move_telescope(telSock,r*radec[1],d*radec[0], verbose=False)
-            pass
+            print "\n"
 
     #Record for guiding checking later
     f = open('/home/utopea/elliot/guidinglog/'+time.strftime('%Y%m%dT%H')+'.txt', 'a')
     f.write("%f\t%f\n" % (radec[1],radec[0]))
     f.close()
+
+    return deltRA, deltDEC
 
 if __name__ == '__main__':
 
