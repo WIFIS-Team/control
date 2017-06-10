@@ -337,8 +337,9 @@ class FLIApplication(_tk.Frame):
             command=self.initGuiding).grid(column=5, row=3, sticky='EW')
         
         self.guidingOnVariable = _tk.IntVar()
-        _tk.Checkbutton(self, text="Guiding On", \
-            variable=self.guidingOnVariable).grid(column=6, row=3, sticky='EW')
+        self.guidingOnVariable.set(0)
+        #_tk.Checkbutton(self, text="Guiding On", \
+        #    variable=self.guidingOnVariable).grid(column=6, row=3, sticky='EW')
 
         label = _tk.Label(self, text='RA Adj (\"):',\
             anchor="center", fg = "black", font=("Helvetica", 12))
@@ -407,7 +408,12 @@ class FLIApplication(_tk.Frame):
     def initGuiding(self):
         if self.telSock:
             if not self.guidingOnVariable.get():
-                print "Guiding not enabled. Please check the box."
+                self.guidingOnVariable.set(1)
+                print "###### STARTING GUIDING ######"
+                #print "Guiding not enabled. Please check the box."
+            elif self.guidingOnVariable.get():
+                self.guidingOnVariable.set(0)
+                return
             elif not self.guideTargetVariable.get():
                 print "Please enter a target for guiding"
             else:
@@ -416,17 +422,27 @@ class FLIApplication(_tk.Frame):
                     int(self.guideExpVariable.get()),gfls)
                 self.startGuiding(guidingstuff)
 
+    #def initGuiding(self):
+    #    if self.telSock:
+    #        if not self.guidingOnVariable.get():
+    #            print "Guiding not enabled. Please check the box."
+    #        elif not self.guideTargetVariable.get():
+    #            print "Please enter a target for guiding"
+    #        else:
+    #            gfls = self.checkGuideVariable()
+    #            guidingstuff = WG.wifis_simple_guiding_setup(self.telSock, self.cam, \
+    #                int(self.guideExpVariable.get()),gfls)
+    #            self.startGuiding(guidingstuff)
+
     def checkGuideVariable(self):
         gfl = '/home/utopea/elliot/'+time.strftime('%Y%m%d')+'_'+self.guideTargetVariable.get()
         guidefls = glob('/home/utopea/elliot/guidefiles/*.txt')
         if gfl not in guidefls:
+            "OBJECT NOT OBSERVED, INITIALIZING GUIDE STAR"
             return gfl, False
         else:
+            print "OBJECT ALREADY OBSERVED, USING ORIGINAL GUIDE STAR"
             return gfl, True
-
-    def checkGuideStar(self):
-        if not self.raGuideVariable.get() and not self.decGuideVariable.get():
-            pass
 
     def startGuiding(self, guidingstuff):
         if self.telSock:

@@ -101,6 +101,7 @@ def centroid_finder(img, plot = False, verbose=False):
             width.append(np.mean([gausx[0][1],gausy[0][1]]))
         except:
             width.append(0)
+
     if plot:
         fig = mpl.figure()
         ax = fig.add_subplot(1,1,1)

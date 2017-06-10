@@ -35,11 +35,14 @@ from sys import exit
 
 # Use the command RADECGUIDE X.XX X.XX to move the telescope. X.XX in arcsec
 
-f = open('/home/utopea/elliot/ipguiding.txt','r')
-lines = f.readlines()
+try:
+    f = open('/home/utopea/elliot/ipguiding.txt','r')
+    lines = f.readlines()
 
-IPADDR = lines[0][:-1]
-PORT = int(lines[1][:-1])
+    IPADDR = lines[0][:-1]
+    PORT = int(lines[1][:-1])
+except:
+    pass
 
 TELID = "BOK"
 REF_NUM = 123
@@ -313,38 +316,47 @@ def wifis_simple_guiding_setup(telSock, cam, exptime, gfls):
     plate_scale = 0.29125 #"/pixel
     #exptime = 1500
 
+    #Gets the rotation solution so that we can guide at any instrument rotation angle
     offsets, x_rot, y_rot = get_rotation_solution(telSock)
 
     #Take image with guider (with shutter open)
     cam.set_exposure(exptime, frametype="normal")
     cam.end_exposure()
 
+    #Takes initial image
     img1 = cam.take_photo()
     img1size = img1.shape
     boxsize = 30
-    
+   
+    #Checks to see if there exists a guiding star for this target
     if gfls[1]:
+        #Sets the larger boxsize for guiding setup
         boxsize_f = 50
-        #Do code to rematch to initial setup
+        
+        #Get the original guidestar coordinates.
         f = open(gfl, 'r')
         lines = f.readlines()
         spl = lines[0].split()
         starx1old, stary1old = spl[0], spl[1]
 
+        #Create box around star and check if star is in box. If star, correct it. If no star, reinitialize guiding
         imgbox = img1[stary1old-boxsize_f:stary1old+boxsize_f, starx1old-boxsize_f:starx1old+boxsize_f]
         worked = checkstarinbox(imgbox, boxsize_f)
 
         if worked:
+            #If we could put a star at the right coordinates, set the guiding coords to the old coords
             starx1 = starx1old
             stary1 = stary1old
         else:
+            #If we could not move a star to the right coordinates, then restart guiding for this object
             print "COULD NOT FIND OLD GUIDESTAR IN IMAGE...SELECTING NEW GUIDESTAR"
             starx1, stary1 = findguidestar(img1)
             
     else:
-        #check positions of stars    
+        #restart guiding by selecting a new guide star in the image 
         starx1, stary1 = findguidestar(img1)
     
+    #Make sure were guiding on an actual star. If not maybe change the exptime for guiding.
     check_guidestar = True
     if check_guidestar:
         imgbox = img[stary1-boxsize:stary1+boxsize, starx1-boxsize:starx1+boxsize]
@@ -361,7 +373,7 @@ def findguidestar(img1):
     centroidx, centroidy, Iarr, Isat, width = WA.centroid_finder(img1, plot=False)
     bright_stars = np.argsort(Iarr)[::-1]
 
-    #Choose the star to track
+    #Choose the brightest non-saturated star for guiding
     guiding_star = bright_stars[0]
     for star in bright_stars:
         if (centroidx[star] > 50 and centroidx[star] < 950) and \
@@ -373,25 +385,30 @@ def findguidestar(img1):
     stary1 = centroidx[guiding_star]
     starx1 = centroidy[guiding_star] 
 
-    #Otherwise just record this initial setup in the file
+    #Record this initial setup in the file
     f = open(gfl, 'w')
-    f.write('%i\t%i\n' % (starx1, stary1)
+    f.write('%i\t%i\n' % (starx1, stary1))
     f.close()
     
     return starx1, stary1
 
 def checkstarinbox(imgbox, boxsize):
 
+    platescale = 0.29125 #"/pixel
+
+    #Try centroiding
     centroidx, centroidy, Iarr, Isat, width = WA.centroid_finder(imgbox, plot=False)
     try:
+        #If centroid worked, great
         new_loc = np.argmax(Iarr)
     except:
-        print "Cant find star in box"
+        #If centroid didn't work, exit and restart gudding
         return False
 
     newx = centroidx[new_loc]
     newy = centroidy[new_loc]
 
+    #Figure out how to move based on the rotation solution
     dx = newx - boxsize 
     dy = newy - boxsize
     d_ra = dx * x_rot
@@ -400,12 +417,12 @@ def checkstarinbox(imgbox, boxsize):
 
     print "INITIAL MOVEMENT TO GET SOURCE BACK IN CENTER"
     print "X Offset:\t%f\nY Offset:\t%f\nRA ADJ:\t\t%f\nDEC ADJ:\t%f\nPix Width:\t%f\nSEEING:\t\t%f\n" \
-       % (dx,dy,radec[1],radec[0],width[0], width[0]*plate_scale)
+       % (dx,dy,radec[1],radec[0],width[0], width[0]*platescale)
 
+    #Move the telescope if the required movement is greater than 0.5" 
     lim = 0.5
     r = -1
     d = -1
-    #print d_ra, d_dec, width[0]
     guidingon=True
     if guidingon:
         if (abs(radec[1]) < lim) and (abs(radec[0]) < lim):
@@ -424,26 +441,30 @@ def checkstarinbox(imgbox, boxsize):
     return True
 
 def run_guiding(inputguiding, parent, cam, telSock):
-    
+   
+    #Get all the parameters from the guiding input
     offsets, x_rot, y_rot, stary1, starx1, boxsize, img1  = inputguiding
     plate_scale = 0.29125 #"/pixel
 
-    guideplot=False
-    if guideplot:
-        mpl.ion()
-        fig, ax = mpl.subplots(1,1)
-        imgbox = img1[stary1-boxsize:stary1+boxsize, starx1-boxsize:starx1+boxsize]
-        imgplot = ax.imshow(imgbox, interpolation='none', origin='lower')
-        fig.canvas.draw()
+    #Start an updating guideplot DOESN'T WORK RIGHT NOW BECAUSE OF THE GUI IMPLEMENTATION
+    #guideplot=False
+    #if guideplot:
+    #    mpl.ion()
+    #    fig, ax = mpl.subplots(1,1)
+    #    imgbox = img1[stary1-boxsize:stary1+boxsize, starx1-boxsize:starx1+boxsize]
+    #    imgplot = ax.imshow(imgbox, interpolation='none', origin='lower')
+    #    fig.canvas.draw()
 
+    #Take an image
     img = cam.take_photo(shutter='open')
     imgbox = img[stary1-boxsize:stary1+boxsize, starx1-boxsize:starx1+boxsize]
   
-    if guideplot:
-        ax.clear()
-        imgplot = ax.imshow(imgbox, interpolation='none', origin='lower')
-        fig.canvas.draw()
-    
+    #if guideplot:
+    #    ax.clear()
+    #    imgplot = ax.imshow(imgbox, interpolation='none', origin='lower')
+    #    fig.canvas.draw()
+   
+    #FInd the star in the box
     centroidx, centroidy, Iarr, Isat, width = WA.centroid_finder(imgbox, plot=False)
     try:
         new_loc = np.argmax(Iarr)
@@ -453,18 +474,14 @@ def run_guiding(inputguiding, parent, cam, telSock):
     newx = centroidx[new_loc]
     newy = centroidy[new_loc]
 
+    #Determine rotation solution 
     dx = newx - boxsize 
     dy = newy - boxsize
     d_ra = dx * x_rot
     d_dec = dy * y_rot
     radec = d_ra + d_dec
 
-    #print newx, newy, dx, dy, d_ra, d_dec, rade
-
-    #fl = open('/home/utopea/elliot/guiding_data.txt','a')
-    #fl.write("%f\t%f\n" % (dx, dy))
-    #fl.close()
-   
+    #Do the movement
     print "X Offset:\t%f\nY Offset:\t%f\nRA ADJ:\t\t%f\nDEC ADJ:\t%f\nPix Width:\t%f\nSEEING:\t\t%f\n" \
        % (dx,dy,radec[1],radec[0],width[0], width[0]*plate_scale)
 
@@ -487,11 +504,11 @@ def run_guiding(inputguiding, parent, cam, telSock):
             move_telescope(telSock,r*radec[1],d*radec[0], verbose=False)
             pass
 
+    #Record for guiding checking later
     f = open('/home/utopea/elliot/guidinglog/'+time.strftime('%Y%m%dT%H')+'.txt', 'a')
     f.write("%f\t%f\n" % (radec[1],radec[0]))
     f.close()
 
-    #move_telescope(telSock, radec[1], radec[0], verbose=False)
 if __name__ == '__main__':
 
     telSock = connect_to_telescope()
