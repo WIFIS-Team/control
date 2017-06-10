@@ -222,10 +222,12 @@ class MainApplication(Frame):
         self.c3 = Checkbutton(self,text="Arc FWHM",variable=self.arcfwhm)
         self.c3.grid(row=4, column=5, columnspan=1,padx=15)
 
-
         self.l1=Label(self, text="",width=50,font=(None,8))
         self.l1.grid(row=5, column=1, columnspan=6,padx=15)
 
+        self.b4 = Button(self, text="Arc Ramp", command=self.arcramp).grid(row=1, column=7)
+        self.b5 = Button(self, text="Flat Ramp", command=self.flatramp).grid(row=2, column=7)
+        
 
     def connect(self):
         self.s.connect((servername,serverport))
@@ -424,6 +426,20 @@ class MainApplication(Frame):
             plt.xlim([mean-3*std,mean+3*std])
             plt.title("Mean = %f5, Std = %f5" % (mean, std))
             plt.show()
+
+    def flatramp(self):
+        self.nramps.set(5)
+        sourcetemp = self.sourcename.get()
+        self.sourcename.set('CalFlat '+self.sourcename.get()) 
+        self.exposeramp()
+        self.sourcename.set(sourcetemp)
+
+    def arcramp(self):
+        self.nramps.set(3)
+        sourcetemp = self.sourcename.get()
+        self.sourcename.set('CalArc '+self.sourcename.get()) 
+        self.exposeramp()
+        self.sourcename.set(sourcetemp)
 
 def run_exposure_gui_standalone():
     """Standalone version of this script for use in case launch_controls fails
