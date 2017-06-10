@@ -328,7 +328,7 @@ class MainApplication(Frame):
         self.status["text"] = "READY"
         self.status["bg"] = "green"
 
-        print("Added Directory: "+added[0])
+        print("Added Directory: "+added[0][:8]+" "+added[0][8:])
 
         self.writeObsdata(watchpath+'/'+added[0])
 
@@ -382,7 +382,7 @@ class MainApplication(Frame):
         self.status["text"] = "READY"
         self.status["bg"] = "green"
 
-        print("Added Directory: "+added[0])
+        print("Added Directory: "+added[0][:8]+" "+added[0][8:])
 
         self.writeObsdata(watchpath+'/'+added[0])
 

@@ -313,8 +313,20 @@ class FLIApplication(_tk.Frame):
 
         label = _tk.Label(self, text='Telescope', relief='ridge',\
             anchor="center", fg = "black", bg=cambg,font=("Helvetica", 20))
-        label.grid(column=4,row=0,columnspan=2, sticky='EW')
+        label.grid(column=4,row=0,columnspan=3, sticky='EW')
         
+        #self.raGuideVariable = _tk.StringVar()
+        #self.raGuideBox = _tk.Entry(self, \
+        #    textvariable=self.raGuideVariable)
+        #self.raGuideBox.grid(column=6, row=4, sticky='EW')
+        #self.raGuideVariable.set("")
+
+        #self.decGuideVariable = _tk.StringVar()
+        #self.decGuideBox = _tk.Entry(self, \
+        #    textvariable=self.decGuideVariable)
+        #self.decGuideBox.grid(column=6, row=5, sticky='EW')
+        #self.decGuideVariable.set("")
+
         _tk.Button(self, text=u'Move Telescope',\
             command=self.moveTelescope).grid(column=4, row=1, sticky='EW')
 
@@ -328,22 +340,40 @@ class FLIApplication(_tk.Frame):
         _tk.Checkbutton(self, text="Guiding On", \
             variable=self.guidingOnVariable).grid(column=6, row=3, sticky='EW')
 
-        label = _tk.Label(self, text='RA Adj (arcsec)',  relief='ridge',\
-            anchor="center", fg = "black", bg="white",font=("Helvetica", 12))
+        label = _tk.Label(self, text='RA Adj (\"):',\
+            anchor="center", fg = "black", font=("Helvetica", 12))
         label.grid(column=5,row=1, sticky='EW')
         
-        label = _tk.Label(self, text='DEC Adj (arcsec)',  relief='ridge',\
-            anchor="center", fg = "black", bg="white",font=("Helvetica", 12))
+        label = _tk.Label(self, text='DEC Adj (\"):',\
+            anchor="center", fg = "black",font=("Helvetica", 12))
         label.grid(column=5,row=2, sticky='EW')
-        
+
+        label = _tk.Label(self, text='Guide Target:',\
+            anchor="center", fg = "black",font=("Helvetica", 12))
+        label.grid(column=5,row=4, sticky='EW')
+        self.guideTargetVariable = _tk.StringVar()
+        self.guideTarget = _tk.Entry(self, width=7, \
+            textvariable=self.guideTargetVariable)
+        self.guideTarget.grid(column=6, row=4, sticky='EW')
+        self.guideTargetVariable.set("")
+
+        label = _tk.Label(self, text='Guide Exp:',\
+            anchor="center", fg = "black",font=("Helvetica", 12))
+        label.grid(column=5,row=5, sticky='EW')
+        self.guideExpVariable = _tk.StringVar()
+        self.guideExp = _tk.Entry(self, width=5, \
+            textvariable=self.guideExpVariable)
+        self.guideExp.grid(column=6, row=5, sticky='EW')
+        self.guideExpVariable.set("1500")
+
         self.raAdjVariable = _tk.StringVar()
-        self.raAdj = _tk.Entry(self, width=10, \
+        self.raAdj = _tk.Entry(self, width=5, \
             textvariable=self.raAdjVariable)
         self.raAdj.grid(column=6, row=1, sticky='EW')
         self.raAdjVariable.set("0.00")
     
         self.decAdjVariable = _tk.StringVar()
-        self.decAdj = _tk.Entry(self, width=10, \
+        self.decAdj = _tk.Entry(self, width=5, \
             textvariable=self.decAdjVariable)
         self.decAdj.grid(column=6, row=2, sticky='EW')
         self.decAdjVariable.set("0.00")
@@ -356,6 +386,9 @@ class FLIApplication(_tk.Frame):
             command=self.offsetToWIFIS)
         self.offsetButton.grid(column=4, row=3, sticky='EW')
 
+        self.offsetAutoButton = _tk.Button(self, text=u'Corr Offset',\
+            command=self.brightStarCorrect)
+        self.offsetAutoButton.grid(column=4, row=5, sticky='EW')
     ## Functions to perform the above actions ##
 
     ## Telescope Functions
@@ -375,9 +408,25 @@ class FLIApplication(_tk.Frame):
         if self.telSock:
             if not self.guidingOnVariable.get():
                 print "Guiding not enabled. Please check the box."
+            elif not self.guideTargetVariable.get():
+                print "Please enter a target for guiding"
             else:
-                guidingstuff = WG.wifis_simple_guiding_setup(self.telSock, self.cam)
+                gfls = self.checkGuideVariable()
+                guidingstuff = WG.wifis_simple_guiding_setup(self.telSock, self.cam, \
+                    int(self.guideExpVariable.get()),gfls)
                 self.startGuiding(guidingstuff)
+
+    def checkGuideVariable(self):
+        gfl = '/home/utopea/elliot/'+time.strftime('%Y%m%d')+'_'+self.guideTargetVariable.get()
+        guidefls = glob('/home/utopea/elliot/guidefiles/*.txt')
+        if gfl not in guidefls:
+            return gfl, False
+        else:
+            return gfl, True
+
+    def checkGuideStar(self):
+        if not self.raGuideVariable.get() and not self.decGuideVariable.get():
+            pass
 
     def startGuiding(self, guidingstuff):
         if self.telSock:
@@ -404,6 +453,18 @@ class FLIApplication(_tk.Frame):
             WG.move_telescope(self.telSock, -1.0*offsets[0], -1.0*offsets[1])
             #self.offsetButton.configure(text='Move to Guider',\
             #    command=self.offsetToGuider)
+            time.sleep(5)
+
+    def brightStarCorrect(self):
+        if self.telSock:
+            offsets, x_rot, y_rot = WG.get_rotation_solution(self.telSock)
+            WG.move_telescope(self.telSock, offsets[0], offsets[1])
+            time.sleep(5)
+            img, dra, ddec = self.checkCentroids(auto=True)
+            time.sleep(3)
+            WG.move_telescope(self.telSock, dra, ddec)
+            time.sleep(3)
+            WG.move_telescope(self.telSock, -1.0*offsets[0], -1.0*offsets[1])
             time.sleep(5)
 
     ## Filter Wheel Functions
@@ -494,10 +555,12 @@ class FLIApplication(_tk.Frame):
             #hdu = fits.PrimaryHDU(header=hduhdr)
             #hdulist = fits.HDUList([hdu])
             if self.entryFilepathVariable.get() == "":
+                print "Writing to: "+self.direc+self.todaydate+'T'+time.strftime('%H%M%S')+'.fits'
                 fits.writeto(self.direc+self.todaydate+'T'+time.strftime('%H%M%S')+'.fits', img, hduhdr,clobber=True)
                 #hdulist.writeto(self.direc+self.todaydate+'T'+time.strftime('%H%M%S')+'.fits', clobber=True)
             else:
-                fits.writeto(self.entryFilepathVariable.get()+".fits", img, hduhdr,clobber=True)
+                print "Writing to: "+self.direc+self.todaydate+'T'+time.strftime('%H%M%S')+'_'+self.entryFilepathVariable.get()+".fits"
+                fits.writeto(self.direc+self.todaydate+'T'+time.strftime('%H%M%S')+'_'+self.entryFilepathVariable.get()+".fits", img, hduhdr,clobber=True)
                 #hdulist.writeto(self.entryFilepathVariable.get(),clobber=True)
                 self.entryFilepathVariable.set("")
 
@@ -557,7 +620,7 @@ class FLIApplication(_tk.Frame):
             mpl.show()
         return img
 
-    def checkCentroids(self):
+    def checkCentroids(self, auto=False):
         if self.cam and self.foc:
             platescale = 0.29125
             if self.imgtypeVariable.get() == 'Dark':
@@ -572,25 +635,37 @@ class FLIApplication(_tk.Frame):
             
             offsets, x_rot, y_rot = WG.get_rotation_solution(self.telSock)
             
-
             centroids = WA.centroid_finder(img)
-            for i in centroids:
-                print i
+            #for i in centroids:
+            #    print i
 
+            barr = np.argsort(centroids[2])[::-1]
             b = np.argmax(centroids[2])
+       
+            d = -1
+            for i,b in enumerate(barr):  
+                if i > 5:
+                    break
+                offsetx = centroids[0][b] - 512
+                offsety = centroids[1][b] - 512
+                dx = offsetx * x_rot
+                dy = offsety * y_rot
+                radec = dx + dy
 
-            print "X Offset: %f, %f" % (centroids[0][b] - 512,(centroids[0][b] - 512)*platescale)
-            print "Y Offset: %f, %f" % (centroids[1][b] - 512,(centroids[1][b] - 512)*platescale)
-            print '\n'
+                print "X, X Offset, RA Move: %f, %f, %f" % (centroids[0][b], offsetx, d*radec[1])
+                print "Y, Y Offset, DEC Move: %f, %f, %f" % (centroids[1][b], offsety, d*radec[0])
+                print '\n'
 
-            mpl.close()
-            fig = mpl.figure()
-            ax = fig.add_subplot(1,1,1)
-            im = ax.imshow(np.log10(img), interpolation='none', cmap='gray', origin='lower')
-            ax.format_coord = Formatter(im)
-            fig.colorbar(im)
-            mpl.show()
-        return img
+            if not auto:
+                mpl.close()
+                fig = mpl.figure()
+                ax = fig.add_subplot(1,1,1)
+                im = ax.imshow(np.log10(img), interpolation='none', cmap='gray', origin='lower')
+                ax.format_coord = Formatter(im)
+                fig.colorbar(im)
+                mpl.show()
+
+        return img, d*radec[1], d*radec[0]
 
     def focusCamera(self):
 
@@ -629,7 +704,7 @@ class FLIApplication(_tk.Frame):
             #if focus gets go back to beginning, change direction and reduce step
             if focus_check2 > focus_check1:
                 direc = direc*-1
-                self.foc.step_motor(direc*step)
+                #self.foc.step_motor(direc*step)
                 step = int(step / 2)
                 print "Focus is worse: changing direction!"
             

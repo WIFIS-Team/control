@@ -16,6 +16,8 @@ from pymodbus.client.sync import ModbusSerialClient as ModbusClient
 from Tkinter import *
 from tkMessageBox import askokcancel
 
+import time
+
 class MainApplication(Frame):
     """
     Main GUI application to control motor
@@ -163,6 +165,11 @@ class MainApplication(Frame):
         Button(self, text="Stop", command=self.m3_stop, width=5).grid(row=13, column=2)
         Button(self, text="Off", command=self.m3_off, width=5).grid(row=14, column=2)
 
+        Label(self, text="Actions").grid(row=0, column=3, padx=15)
+        Button(self, text="TB", command=self.gotoTB, width=5).grid(row=1, column=3)
+        Button(self, text="H", command=self.gotoH, width=5).grid(row=2, column=3)
+        Button(self, text="Blank", command=self.gotoBlank, width=5).grid(row=3, column=3)
+
     def get_position(self):
         
         position_labels = [self.pos1,self.pos2,self.pos3]
@@ -229,6 +236,20 @@ class MainApplication(Frame):
         self.client.write_register(0x001E, 0x2800, unit=unit)
         self.client.write_register(0x001E, 0x2000, unit=unit)
 
+    #Actions
+    def gotoTB(self):
+        self.m2_step(action='20000')
+        time.sleep(1)
+        self.m3_step(action='-200')
+
+    def gotoH(self):
+        self.m2_step(action='40000')
+        time.sleep(1)
+        self.m3_step(action='360')
+
+    def gotoBlank(self):
+        self.m2_step(action='0')
+    
     # Motor 1 methods
     def m1_speed(self):
         speed = int(self.motor_speed1.get())
@@ -260,8 +281,11 @@ class MainApplication(Frame):
         lower = speed & 0xFFFF
         self.client.write_registers(0x0502, [upper, lower], unit=0x02)
 
-    def m2_step(self):
-        self.stepping_operation(self.motor_step2.get(), unit=0x02)
+    def m2_step(self, action=False):
+        if not action:
+            self.stepping_operation(self.motor_step2.get(), unit=0x02)
+        elif action:
+            self.stepping_operation(action, unit=0x02)
 
     def m2_forward(self):
         self.client.write_register(0x001E, 0x2000, unit=0x02)
@@ -284,8 +308,11 @@ class MainApplication(Frame):
         lower = speed & 0xFFFF
         self.client.write_registers(0x0502, [upper, lower], unit=0x03)
 
-    def m3_step(self):
-        self.stepping_operation(self.motor_step3.get(), unit=0x03)
+    def m3_step(self, action=False):
+        if not action:
+            self.stepping_operation(self.motor_step3.get(), unit=0x03)
+        elif action:
+            self.stepping_operation(action, unit=0x03)
 
     def m3_forward(self):
         self.client.write_register(0x001E, 0x2000, unit=0x03)

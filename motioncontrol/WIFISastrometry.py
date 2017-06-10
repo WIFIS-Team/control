@@ -49,7 +49,8 @@ def centroid_finder(img, plot = False, verbose=False):
         for y in range(imgsize[1]):
             if new_img[x,y] == 1:
                 new_star, new_img = explore_region(x,y,new_img)
-                stars.append(new_star)
+                if len(new_star[0]) >=3: #Check that the star is not just a hot pixel
+                    stars.append(new_star)
     
     centroidx, centroidy, Iarr, Isat, width = [],[],[],[],[]
     for star in stars:
