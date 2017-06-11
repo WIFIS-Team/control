@@ -191,7 +191,11 @@ def get_rotation_solution(telSock):
     y_sol = np.array([plate_scale, 0.0])
     offsets = np.array([-4.0, 414.1]) #old -6.0, 424.1
 
-    rotangle = float(query_telescope(telSock, 'BOK TCS 123 REQUEST IIS')[-1]) - 90
+    forcerot = True
+    if forcerot == True:
+        rotangle = 90
+    else:
+        rotangle = float(query_telescope(telSock, 'BOK TCS 123 REQUEST IIS')[-1]) - 90
 
     rotangle_rad = rotangle*np.pi/180.0
     rotation_matrix = np.array([[np.cos(rotangle_rad),1*np.sin(rotangle_rad)],\

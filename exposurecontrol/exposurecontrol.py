@@ -225,8 +225,8 @@ class MainApplication(Frame):
         self.l1=Label(self, text="",width=50,font=(None,8))
         self.l1.grid(row=5, column=1, columnspan=6,padx=15)
 
-        self.b4 = Button(self, text="Arc Ramp", command=self.arcramp).grid(row=1, column=7)
-        self.b5 = Button(self, text="Flat Ramp", command=self.flatramp).grid(row=2, column=7)
+        self.b4 = Button(self, text="Arc Ramp", command=self.arcramp).grid(row=1, column=6)
+        self.b5 = Button(self, text="Flat Ramp", command=self.flatramp).grid(row=2, column=6)
         
 
     def connect(self):
@@ -428,17 +428,17 @@ class MainApplication(Frame):
             plt.show()
 
     def flatramp(self):
-        self.nramps.set(5)
+        self.nreads.set(5)
         sourcetemp = self.sourcename.get()
         self.sourcename.set('CalFlat '+self.sourcename.get()) 
-        self.exposeramp()
+        self.exposeRamp()
         self.sourcename.set(sourcetemp)
 
     def arcramp(self):
-        self.nramps.set(3)
+        self.nreads.set(3)
         sourcetemp = self.sourcename.get()
         self.sourcename.set('CalArc '+self.sourcename.get()) 
-        self.exposeramp()
+        self.exposeRamp()
         self.sourcename.set(sourcetemp)
 
 def run_exposure_gui_standalone():

@@ -395,15 +395,51 @@ class FLIApplication(_tk.Frame):
         self.offsetAutoButton = _tk.Button(self, text=u'Corr Offset',\
             command=self.brightStarCorrect)
         self.offsetAutoButton.grid(column=4, row=5, sticky='EW')
+
+        label = _tk.Label(self, text='X Offset:',\
+            anchor="center", fg = "black",font=("Helvetica", 12)).grid(column=5,row=6, sticky='EW')
+        self.xOffsetVar = _tk.StringVar()
+        self.xOffsetVar.set("0")
+        self.xOffset = _tk.Entry(self, width=15, \
+            textvariable=self.xOffsetVar).grid(column=6, row=6, sticky='EW')
+
+        label = _tk.Label(self, text='Y Offset:',\
+            anchor="center", fg = "black",font=("Helvetica", 12)).grid(column=5,row=7, sticky='EW')
+        self.yOffsetVar = _tk.StringVar()
+        self.yOffsetVar.set("0")
+        self.yOffset = _tk.Entry(self, width=15, \
+            textvariable=self.yOffsetVar).grid(column=6, row=7, sticky='EW')
+
+        self.calcmov = _tk.Button(self, text=u'Calc Offset',\
+            command=self.calcOffset).grid(column=4, row=6, sticky='EW')
+
+        
     ## Functions to perform the above actions ##
 
     ## Telescope Functions
+
+    def calcOffset(self):
+        #Get rotation solution
+        offsets,x_rot,y_rot = WG.get_rotation_solution(self.telSock)
+        xc = float(self.xOffsetVar.get())
+        yc = float(self.yOffsetVar.get())
+
+        offsetx = xc - 512
+        offsety = yc - 512
+        dx = offsetx*x_rot
+        dy = offsety*y_rot
+        radec = dx + dy
+
+        print "### MOVE ###\nRA:\t%f\nDEC:\t%f\n" % (-1*radec[1], -1*radec[0])
+
+        return
+
 
     def printTelemetry(self):
         if self.telSock:
             telemDict = WG.get_telemetry(self.telSock)
             WG.clean_telem(telemDict)
-            WG.write_telemetry(telemDict)
+            #WG.write_telemetry(telemDict)
 
     def moveTelescope(self):
         if self.telSock:
@@ -680,8 +716,8 @@ class FLIApplication(_tk.Frame):
                 dy = offsety * y_rot
                 radec = dx + dy
 
-                print "X, X Offset, RA Move: %f, %f, %f" % (centroids[0][b], offsetx, d*radec[1])
-                print "Y, Y Offset, DEC Move: %f, %f, %f" % (centroids[1][b], offsety, d*radec[0])
+                print "Y, Y Offset, RA Move: %f, %f, %f" % (centroids[1][b], offsety, d*radec[1])
+                print "X, X Offset, DEC Move: %f, %f, %f" % (centroids[0][b], offsetx, d*radec[0])
                 print '\n'
 
             if not auto:
