@@ -137,6 +137,9 @@ class FLIApplication(_tk.Frame):
         if not os.path.exists(self.direc):
             os.makedirs(self.direc)
 
+        self.guideButtonVar = _tk.StringVar()
+        self.guideButtonVar.set('Start Guiding')
+
         self.initialize()
 
         # Call the functions to continuously update the reporting fields    
@@ -338,13 +341,11 @@ class FLIApplication(_tk.Frame):
         _tk.Button(self, text=u'Print Telemetry',\
             command=self.printTelemetry).grid(column=4, row=4, sticky='EW')    
 
-        _tk.Button(self, text=u'Start Guiding',\
+        self.guideButton = _tk.Button(self, textvariable=self.guideButtonVar,\
             command=self.initGuiding).grid(column=5, row=3, sticky='EW')
         
         self.guidingOnVariable = _tk.IntVar()
         self.guidingOnVariable.set(0)
-        #_tk.Checkbutton(self, text="Guiding On", \
-        #    variable=self.guidingOnVariable).grid(column=6, row=3, sticky='EW')
 
         label = _tk.Label(self, text='RA Adj (\"):',\
             anchor="center", fg = "black", font=("Helvetica", 12))
@@ -393,8 +394,7 @@ class FLIApplication(_tk.Frame):
         self.offsetButton.grid(column=4, row=3, sticky='EW')
 
         self.offsetAutoButton = _tk.Button(self, text=u'Corr Offset',\
-            command=self.brightStarCorrect)
-        self.offsetAutoButton.grid(column=4, row=5, sticky='EW')
+            command=self.brightStarCorrect).grid(column=4, row=5, sticky='EW')
 
         label = _tk.Label(self, text='X Offset:',\
             anchor="center", fg = "black",font=("Helvetica", 12)).grid(column=5,row=6, sticky='EW')
@@ -468,6 +468,7 @@ class FLIApplication(_tk.Frame):
             elif not self.guidingOnVariable.get():
                 self.guidingOnVariable.set(1)
                 print "###### STARTING GUIDING ######"
+                self.guideButtonVar.set("Stop Guiding")
                 gfls = self.checkGuideVariable()
                 guidingstuff = WG.wifis_simple_guiding_setup(self.telSock, self.cam, \
                     int(self.guideExpVariable.get()),gfls)
@@ -478,14 +479,19 @@ class FLIApplication(_tk.Frame):
         if self.telSock:
             if not self.guidingOnVariable.get():
                 self.cam.end_exposure()
-                print "FINISHED GUIDING"
+                self.guideButtonVar.set("Start Guiding")
+                print "###### FINISHED GUIDING ######"
                 return
             else:
-                dRA, dDEC = WG.run_guiding(guidingstuff, \
-                    self.parent, self.cam, self.telSock)
-                self.deltRA += dRA
-                self.deltDEC += dDEC
-                print "DELTRA:\t\t%f\nDELTDEC:\t%f\n" % (self.deltRA, self.deltDEC)
+                try:
+                    dRA, dDEC = WG.run_guiding(guidingstuff, \
+                        self.parent, self.cam, self.telSock)
+                    self.deltRA += dRA
+                    self.deltDEC += dDEC
+                    print "DELTRA:\t\t%f\nDELTDEC:\t%f\n" % (self.deltRA, self.deltDEC)
+                except:
+                    print "SOMETHING WENT WRONG... CONTINUING"
+                    pass
                 self.parent.after(3000, lambda: self.startGuiding(guidingstuff))
 
     def checkGuideVariable(self):
@@ -758,8 +764,6 @@ class FLIApplication(_tk.Frame):
             self.foc.step_motor(direc*step)
             img = self.cam.take_photo()
 
-            print "STEP IS: %i\nPOS IS: %i" % (step,current_focus)
-            print "Old Focus: %f, New Focus: %f" % (focus_check1, focus_check2)
 
             #plotting
             ax.clear()
@@ -771,6 +775,9 @@ class FLIApplication(_tk.Frame):
             #fig.canvas.blit(ax.bbox)
 
             focus_check2,bx2,by2 = measure_focus(img)
+            
+            print "STEP IS: %i\nPOS IS: %i" % (step,current_focus)
+            print "Old Focus: %f, New Focus: %f" % (focus_check1, focus_check2)
 
             #if focus gets go back to beginning, change direction and reduce step
             if focus_check2 > focus_check1:

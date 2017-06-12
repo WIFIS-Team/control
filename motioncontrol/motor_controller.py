@@ -343,7 +343,7 @@ def run_motor_gui_standalone():
     # Create and set up the GUI object
     root = Tk()
     root.title("WIFIS Motor Controller")
-    root.geometry("275x375")
+    #root.geometry("275x375")
     #root.protocol("WM_DELETE_WINDOW", on_closing)
 
     app = MainApplication(root,client)
@@ -365,7 +365,7 @@ def run_motor_gui(tkroot):
     # Create and set up the GUI object
     root = Toplevel(tkroot)
     root.title("WIFIS Motor Controller")
-    root.geometry("250x375")
+    #root.geometry("250x375")
     #root.protocol("WM_DELETE_WINDOW", on_closing)
 
     app = MainApplication(root,client)

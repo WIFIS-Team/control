@@ -153,7 +153,7 @@ def clean_telem(telemDict):
 
     #print telemetry data in a clean way
     print "\n"
-    print "|\t  BOK TELEMETRY       \t"
+    print "|\t  BOK TELEMETRY             |"
     for (key, value) in telemDict.iteritems():
         print "|%s\t|\t%s|" % (key.ljust(10), value.ljust(12))
 
@@ -184,14 +184,14 @@ def plotguiderimage(img):
     mpl.imshow(np.log10(img), cmap='gray',interpolation='none',origin='lower')
     mpl.show()
 
-def get_rotation_solution(telSock):
+def get_rotation_solution(telSock, forcerot=90):
 
     plate_scale = 0.29125
     x_sol = np.array([0.0, plate_scale])
     y_sol = np.array([plate_scale, 0.0])
     offsets = np.array([-4.0, 414.1]) #old -6.0, 424.1
 
-    forcerot = True
+    forcerot = False
     if forcerot == True:
         rotangle = 90
     else:

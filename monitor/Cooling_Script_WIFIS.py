@@ -485,10 +485,11 @@ def generate_history_plot(new_data):
         plt.grid(True)
         p1,  = plt.plot((numpy.array(timestamp_list,copy=True)-time_now)/60,  numpy.array(input_A_list,copy=True),  'b.-')
         p2,  = plt.plot((numpy.array(timestamp_list,copy=True)-time_now)/60,  numpy.array(input_B_list,copy=True),  'g.-')
-        p3,  = plt.plot((numpy.array(timestamp_list,copy=True)-time_now)/60,  numpy.array(input_C_list,copy=True),  'r.-')
+        #p3,  = plt.plot((numpy.array(timestamp_list,copy=True)-time_now)/60,  numpy.array(input_C_list,copy=True),  'r.-')
         p4,  = plt.plot((numpy.array(timestamp_list,copy=True)-time_now)/60,  numpy.array(input_D_list,copy=True),  'c.-')
         p5,  = plt.plot((numpy.array(timestamp_list,copy=True)-time_now)/60,  numpy.array(input_E_list,copy=True),  'm.-')
-        plt.legend(['Det1','Det2','ASIC','Optics','Worksurface'], loc=9)
+        #plt.legend(['Det1','Det2','ASIC','Optics','Worksurface'], loc=9)
+        plt.legend(['Det1','Det2','Optics','Worksurface'], loc=9)
         plt.savefig('history_plot.png',  format='png')
         Image.open('history_plot.png').save('history_plot.jpg','JPEG')
         plt.clf() #clear figure

@@ -3,12 +3,11 @@
 # Miranda Jarvis Oct 2015
 # Updated by Elliot Meyer Jan 2016, May 2017
 
-from pylab import * 
+from pylab import *
 import serial
 from time import *
 from Tkinter import *
 import ttk
-import dlipower
 import sys
 import signal
 
