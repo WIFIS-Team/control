@@ -501,9 +501,10 @@ def run_guiding(inputguiding, parent, cam, telSock):
     print "X Offset:\t%f\nY Offset:\t%f\nRA ADJ:\t\t%f\nDEC ADJ:\t%f\nPix Width:\t%f\nSEEING:\t\t%f" \
        % (dx,dy,radec[1],radec[0],width[0], width[0]*plate_scale)
 
-    lim = 0.8
-    r = -1
-    d = -1
+    ##### IMPORTANT GUIDING PARAMETERS #####
+    lim = 0.8 #Changes the absolute limit at which point the guider moves the telescope
+    d = -0.8 #Affects how much the guider corrects by. I was playing around with -0.8 but the default is -1. Keep this negative.
+    #######################################
 
     deltRA = 0
     deltDEC = 0
@@ -519,12 +520,12 @@ def run_guiding(inputguiding, parent, cam, telSock):
             move_telescope(telSock, 0.0, d*radec[0], verbose=False)
         elif abs(radec[0]) < lim:
             print "MOVING RA ONLY\n"
-            deltRA = r*radec[1]
-            move_telescope(telSock, r*radec[1], 0.0, verbose=False)
+            deltRA = d*radec[1]
+            move_telescope(telSock, d*radec[1], 0.0, verbose=False)
         else:
-            deltRA = r*radec[1]
+            deltRA = d*radec[1]
             deltDEC = d*radec[0]
-            move_telescope(telSock,r*radec[1],d*radec[0], verbose=False)
+            move_telescope(telSock,d*radec[1],d*radec[0], verbose=False)
             print "\n"
 
     #Record for guiding checking later

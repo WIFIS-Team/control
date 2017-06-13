@@ -421,8 +421,8 @@ class FLIApplication(_tk.Frame):
     def calcOffset(self):
         #Get rotation solution
         offsets,x_rot,y_rot = WG.get_rotation_solution(self.telSock)
-        xc = float(self.xOffsetVar.get())
-        yc = float(self.yOffsetVar.get())
+        yc = float(self.xOffsetVar.get())
+        xc = float(self.yOffsetVar.get())
 
         offsetx = xc - 512
         offsety = yc - 512
@@ -434,7 +434,6 @@ class FLIApplication(_tk.Frame):
 
         return
 
-
     def printTelemetry(self):
         if self.telSock:
             telemDict = WG.get_telemetry(self.telSock)
@@ -443,6 +442,9 @@ class FLIApplication(_tk.Frame):
 
     def moveTelescope(self):
         if self.telSock:
+            if self.guidingOnVariable.get():
+                self.guidingOnVariable.set(0)
+                time.sleep(3)
             WG.move_telescope(self.telSock,float(self.raAdjVariable.get()), \
                 float(self.decAdjVariable.get()))
 
@@ -512,7 +514,7 @@ class FLIApplication(_tk.Frame):
             WG.move_telescope(self.telSock, offsets[0], offsets[1]) 
             #self.offsetButton.configure(text='Move to WIFIS',\
             #    command=self.offsetToWIFIS)
-            time.sleep(5)
+            time.sleep(3)
 
     def offsetToWIFIS(self):
         if self.telSock:
@@ -520,7 +522,7 @@ class FLIApplication(_tk.Frame):
             WG.move_telescope(self.telSock, -1.0*offsets[0], -1.0*offsets[1])
             #self.offsetButton.configure(text='Move to Guider',\
             #    command=self.offsetToGuider)
-            time.sleep(5)
+            time.sleep(3)
 
     def brightStarCorrect(self):
         if self.telSock:
