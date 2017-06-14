@@ -751,7 +751,8 @@ class FLIApplication(_tk.Frame):
         current_focus = self.foc.get_stepper_position() 
         step = 200
 
-        self.cam.set_exposure(int(self.entryExpVariable.get()))
+        self.cam.set_exposure(3000)
+        #self.cam.set_exposure(int(self.entryExpVariable.get()))
         img = self.cam.take_photo()
         focus_check1, bx, by = measure_focus(img)
         direc = 1 #forward
