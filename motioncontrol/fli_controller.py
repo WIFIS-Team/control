@@ -55,7 +55,7 @@ def load_FLIDevices():
         #foc.home_focuser()
         pass
     if cam:
-        cam.end_exposure()
+    #    cam.end_exposure()
         cam.set_temperature(-20)
     # ??? any other default params ???
    
@@ -491,7 +491,8 @@ class FLIApplication(_tk.Frame):
                     self.deltRA += dRA
                     self.deltDEC += dDEC
                     print "DELTRA:\t\t%f\nDELTDEC:\t%f\n" % (self.deltRA, self.deltDEC)
-                except:
+                except Exception as e:
+                    print e
                     print "SOMETHING WENT WRONG... CONTINUING"
                     pass
                 self.parent.after(3000, lambda: self.startGuiding(guidingstuff))
@@ -691,7 +692,6 @@ class FLIApplication(_tk.Frame):
 
     def checkCentroids(self, auto=False):
         if self.cam and self.foc:
-            platescale = 0.29125
             if self.imgtypeVariable.get() == 'Dark':
                 self.cam.end_exposure()
                 self.cam.set_exposure(int(self.entryExpVariable.get()), frametype='dark')
@@ -724,8 +724,10 @@ class FLIApplication(_tk.Frame):
                 dy = offsety * y_rot
                 radec = dx + dy
 
-                print "Y, Y Offset, RA Move: %f, %f, %f" % (centroids[1][b], offsety, d*radec[1])
-                print "X, X Offset, DEC Move: %f, %f, %f" % (centroids[0][b], offsetx, d*radec[0])
+                print "Y, Y Offset, RA Move: %f, %f" % (centroids[1][b], offsety)
+                print "X, X Offset, DEC Move: %f, %f" % (centroids[0][b], offsetx)
+		print "RA Move: %f" % (d*radec[1])
+		print "DEC Move: %f" % (d*radec[0])
                 print '\n'
 
             if not auto:

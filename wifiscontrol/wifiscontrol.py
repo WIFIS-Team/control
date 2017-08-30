@@ -33,29 +33,7 @@ def channelrefcorrect(data,channel=32):
          data[:,i*csize:i*csize+csize] = data[:,i*csize:i*csize+csize] - corrfactor[i]
 
 def pointing(file):
-    slices = [[34,135],[147,247],[255,357],[367,471],[481,585],[595,697],[707,809],[819,923],[935,1039],[1047,1149],[1163,1265],[1277,1377],[1387,1489], [1503,1607], [1613,1715], [1731,1832], [1843,1943], [1957,2048]]
-    sliceorder = [8,9,7,10,6,11,5,12,4,13,3,14,2,15,1,16,0,17]
-    #sliceorder = [9,8,10,7,11,6,12,5,13,4,14,3,15,2,16,1,17,0]
-
-    hdu = fits.open(file)
-
-    data = hdu[0].data*1.0
-
-    summedrows = np.median(data[1600:1900,:],axis=0)
-
-    #plt.plot(summedrows)
-
-    wifisimg = np.zeros((36,100))
-
-    for i in range(18):
-        pixrange = slices[i]
-        if((pixrange[1] - pixrange[0]) >= 100):
-            wifisimg[sliceorder[i]*2,:] = (summedrows[pixrange[0]:pixrange[0]+100])/2.0
-            wifisimg[sliceorder[i]*2+1,:] = (summedrows[pixrange[0]:pixrange[0]+100])/2.0
-                                    
-    plt.figure()
-    plt.imshow(wifisimg,interpolation='none')
-    plt.show()
+    return(None)
 
 plt.ion()
 
@@ -73,7 +51,7 @@ class MainApplication(Frame):
  
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.currentStatus = "Disconnected"
-	self.correctData = IntVar(value=0)
+        self.correctData = IntVar(value=0)
         self.histogram = IntVar(value=0)
         self.arcfwhm = IntVar(value=0)
         self.nreads = IntVar(value=1)
@@ -355,7 +333,7 @@ def run_exposure_gui_standalone():
 
     print 'Activating GUI'
     root = Tk() #gui set up stuff
-    root.title("H2RG Exposure Control") #gui name
+    root.title("WIFIS Control") #gui name
 
     app = MainApplication(root) #set up gui class
 

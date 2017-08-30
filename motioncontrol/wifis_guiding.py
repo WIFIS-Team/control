@@ -13,6 +13,12 @@ from glob import glob
 from astropy.io import fits
 from sys import exit
 
+plate_scale = 0.29125
+guideroffsets = np.array([-5.67,377.57]) 
+
+#June 2017 -4.0,414.1
+#May 2017 -6.0, 424.1
+
 # !!IMPORTANT!!: Before guiding can work we need to characterize the offset of the 
 #                guiding field from the primary field.
 
@@ -186,10 +192,8 @@ def plotguiderimage(img):
 
 def get_rotation_solution(telSock, forcerot=90):
 
-    plate_scale = 0.29125
     x_sol = np.array([0.0, plate_scale])
     y_sol = np.array([plate_scale, 0.0])
-    offsets = np.array([-4.0, 414.1]) #old -6.0, 424.1
 
     forcerot = False
     if forcerot == True:
@@ -203,7 +207,7 @@ def get_rotation_solution(telSock, forcerot=90):
     rotation_matrix_offsets = np.array([[np.cos(rotangle_rad),-1*np.sin(rotangle_rad)],\
         [1*np.sin(rotangle_rad), np.cos(rotangle_rad)]])
 
-    offsets = np.dot(rotation_matrix_offsets, offsets)
+    offsets = np.dot(rotation_matrix_offsets, guideroffsets)
     x_rot = np.dot(rotation_matrix, x_sol)
     y_rot = np.dot(rotation_matrix, y_sol)
 
@@ -212,7 +216,6 @@ def get_rotation_solution(telSock, forcerot=90):
 def wifis_simple_guiding(telSock):
 
     #Some constants that need defining
-    plate_scale = 0.29125 #"/pixel
     exptime = 1500
 
     offsets, x_rot, y_rot = get_rotation_solution(telSock)
@@ -309,6 +312,7 @@ def wifis_simple_guiding(telSock):
                     pass
            
             time.sleep(1)
+
     except KeyboardInterrupt:
         cam.end_exposure()
 
@@ -319,7 +323,6 @@ def wifis_simple_guiding(telSock):
 def wifis_simple_guiding_setup(telSock, cam, exptime, gfls):
 
     #Some constants that need defining
-    plate_scale = 0.29125 #"/pixel
     #exptime = 1500
 
     #Gets the rotation solution so that we can guide at any instrument rotation angle
@@ -367,7 +370,9 @@ def wifis_simple_guiding_setup(telSock, cam, exptime, gfls):
     if check_guidestar:
         img2 = cam.take_photo()
         mpl.ion()
-        imgbox = img2[stary1-boxsize:stary1+boxsize, starx1-boxsize:starx1+boxsize]
+        starybox = int(stary1)
+        starxbox = int(starx1)
+        imgbox = img2[starybox-boxsize:starybox+boxsize, starxbox-boxsize:starxbox+boxsize]
         mpl.imshow(imgbox, interpolation='none', origin='lower')
         mpl.plot([boxsize],[boxsize], 'rx', markersize=10)
         #mpl.plot(starx1, stary1, 'ro', markeredgecolor = 'r', markerfacecolor='none', markersize = 5)
@@ -458,7 +463,6 @@ def run_guiding(inputguiding, parent, cam, telSock):
    
     #Get all the parameters from the guiding input
     offsets, x_rot, y_rot, stary1, starx1, boxsize, img1  = inputguiding
-    plate_scale = 0.29125 #"/pixel
 
     #Start an updating guideplot DOESN'T WORK RIGHT NOW BECAUSE OF THE GUI IMPLEMENTATION
     #guideplot=False
@@ -471,8 +475,10 @@ def run_guiding(inputguiding, parent, cam, telSock):
 
     #Take an image
     img = cam.take_photo(shutter='open')
-    imgbox = img[stary1-boxsize:stary1+boxsize, starx1-boxsize:starx1+boxsize]
-  
+    starx_box = int(starx1)
+    stary_box = int(stary1)
+    imgbox = img[stary_box-boxsize:stary_box+boxsize, starx_box-boxsize:starx_box+boxsize]
+
     #if guideplot:
     #    ax.clear()
     #    imgplot = ax.imshow(imgbox, interpolation='none', origin='lower')
@@ -502,7 +508,7 @@ def run_guiding(inputguiding, parent, cam, telSock):
        % (dx,dy,radec[1],radec[0],width[0], width[0]*plate_scale)
 
     ##### IMPORTANT GUIDING PARAMETERS #####
-    lim = 0.8 #Changes the absolute limit at which point the guider moves the telescope
+    lim = 0.35 #Changes the absolute limit at which point the guider moves the telescope
     d = -0.8 #Affects how much the guider corrects by. I was playing around with -0.8 but the default is -1. Keep this negative.
     #######################################
 
