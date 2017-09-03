@@ -19,7 +19,8 @@ from sys import exit
 import wifis_guiding as WG
 import os, time, threading, Queue
 from glob import glob
-
+from astropy.visualization import (PercentileInterval,\
+                                LinearStretch, ImageNormalize)
 try:
     import FLI
 except (ImportError, RuntimeError):
@@ -139,6 +140,9 @@ class FLIApplication(_tk.Frame):
 
         self.guideButtonVar = _tk.StringVar()
         self.guideButtonVar.set('Start Guiding')
+
+        self.skyMoveVar = _tk.StringVar()
+        self.skyMoveVar.set('Move to Sky')
 
         self.initialize()
 
@@ -343,7 +347,10 @@ class FLIApplication(_tk.Frame):
 
         self.guideButton = _tk.Button(self, textvariable=self.guideButtonVar,\
             command=self.initGuiding).grid(column=5, row=3, sticky='EW')
-        
+
+        self.skyMoveButton = _tk.Button(self, text=u'Sky Move',\
+                command=self.skyMove).grid(column=6, row=3, sticky='EW')
+
         self.guidingOnVariable = _tk.IntVar()
         self.guidingOnVariable.set(0)
 
@@ -444,7 +451,7 @@ class FLIApplication(_tk.Frame):
         if self.telSock:
             if self.guidingOnVariable.get():
                 self.guidingOnVariable.set(0)
-                time.sleep(3)
+                time.sleep(4)
             WG.move_telescope(self.telSock,float(self.raAdjVariable.get()), \
                 float(self.decAdjVariable.get()))
 
@@ -496,6 +503,15 @@ class FLIApplication(_tk.Frame):
                     print "SOMETHING WENT WRONG... CONTINUING"
                     pass
                 self.parent.after(3000, lambda: self.startGuiding(guidingstuff))
+
+    def skyMove(self):
+        if self.telSock:
+            if self.guidingOnVariable.get():
+                self.guidingOnVariable.set(0)
+                self.after(4000, self.moveTelescope)
+                self.after(4000, self.initGuiding)
+            else:
+                return
 
     def checkGuideVariable(self):
         gfl = '/home/utopea/elliot/guidefiles/'+time.strftime('%Y%m%d')+'_'+self.guideTargetVariable.get()+'.txt'
@@ -632,12 +648,16 @@ class FLIApplication(_tk.Frame):
                 print "Writing to: "+self.direc+self.todaydate+'T'+time.strftime('%H%M%S')+'_'+self.entryFilepathVariable.get()+".fits"
                 fits.writeto(self.direc+self.todaydate+'T'+time.strftime('%H%M%S')+'_'+self.entryFilepathVariable.get()+".fits", img, hduhdr,clobber=True)
                 #hdulist.writeto(self.entryFilepathVariable.get(),clobber=True)
-                self.entryFilepathVariable.set("")
+                #self.entryFilepathVariable.set("")
 
             mpl.close()
             fig = mpl.figure()
             ax = fig.add_subplot(1,1,1)
-            im = ax.imshow(np.log10(img), interpolation='none', cmap='gray', origin='lower')
+
+            norm = ImageNormalize(img, interval=PercentileInterval(99.5), stretch=LinearStretch())
+            #norm = ImageNormalize(img,  stretch=LinearStretch())
+            
+            im = ax.imshow(img, interpolation='none', norm= norm, cmap='gray', origin='lower')
             ax.format_coord = Formatter(im)
             fig.colorbar(im)
             mpl.show()
@@ -684,7 +704,10 @@ class FLIApplication(_tk.Frame):
             mpl.close()
             fig = mpl.figure()
             ax = fig.add_subplot(1,1,1)
-            im = ax.imshow(np.log10(img), interpolation='none', cmap='gray', origin='lower')
+            
+            norm = ImageNormalize(img, interval=PercentileInterval(99.5), stretch=LinearStretch())
+
+            im = ax.imshow(img, interpolation='none', norm= norm, cmap='gray', origin='lower')
             ax.format_coord = Formatter(im)
             fig.colorbar(im)
             mpl.show()

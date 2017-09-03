@@ -14,7 +14,7 @@ from astropy.io import fits
 from sys import exit
 
 plate_scale = 0.29125
-guideroffsets = np.array([-5.67,377.57]) 
+guideroffsets = np.array([-4.15,365.88])
 
 #June 2017 -4.0,414.1
 #May 2017 -6.0, 424.1
@@ -199,13 +199,17 @@ def get_rotation_solution(telSock, forcerot=90):
     if forcerot == True:
         rotangle = 90
     else:
-        rotangle = float(query_telescope(telSock, 'BOK TCS 123 REQUEST IIS')[-1]) - 90
+        rotangle = float(query_telescope(telSock, 'BOK TCS 123 REQUEST IIS')[-1]) - 90 - 0.26
 
     rotangle_rad = rotangle*np.pi/180.0
     rotation_matrix = np.array([[np.cos(rotangle_rad),1*np.sin(rotangle_rad)],\
         [-1*np.sin(rotangle_rad), np.cos(rotangle_rad)]])
     rotation_matrix_offsets = np.array([[np.cos(rotangle_rad),-1*np.sin(rotangle_rad)],\
         [1*np.sin(rotangle_rad), np.cos(rotangle_rad)]])
+
+    #if (rotangle < 90) & (rotangle > 0):
+    #    rotation_matrix = rotation_matrix_offsets
+    #    print "CHANGING MATRIX"
 
     offsets = np.dot(rotation_matrix_offsets, guideroffsets)
     x_rot = np.dot(rotation_matrix, x_sol)
