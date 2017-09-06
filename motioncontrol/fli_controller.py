@@ -21,6 +21,8 @@ import os, time, threading, Queue
 from glob import glob
 from astropy.visualization import (PercentileInterval,\
                                 LinearStretch, ImageNormalize)
+from PyQt5.QtCore import QThread
+
 try:
     import FLI
 except (ImportError, RuntimeError):
@@ -84,8 +86,8 @@ def measure_focus(img, sideregions = 3, fitwidth = 10, plot=False, verbose=False
                 if verbose:
                     print "BRIGHTSTAR: %f %f %f" % (centroids[0][brightstar], \
                         centroids[1][brightstar], centroids[2][brightstar])
-                cx = centroids[0][brightstar]
-                cy = centroids[1][brightstar]
+                cx = int(centroids[0][brightstar])
+                cy = int(centroids[1][brightstar])
                 if centroids[2] > bright:
                     bright = centroids[2]
                     brightestx = cx+regionx*i
@@ -291,7 +293,7 @@ class FLIApplication(_tk.Frame):
         label.grid(column=0,row=7, sticky='EW')
 
         self.entryFilepathVariable = _tk.StringVar()
-        self.entryFilepath = _tk.Entry(self, width=30, \
+        self.entryFilepath = _tk.Entry(self, width=20, \
             textvariable=self.entryFilepathVariable)
         self.entryFilepath.grid(column=0, row=8, sticky='EW')
         self.entryFilepathVariable.set("")
@@ -455,18 +457,6 @@ class FLIApplication(_tk.Frame):
             WG.move_telescope(self.telSock,float(self.raAdjVariable.get()), \
                 float(self.decAdjVariable.get()))
 
-    #def initGuiding(self):
-    #    if self.telSock:
-    #        if not self.guidingOnVariable.get():
-    #            print "Guiding not enabled. Please check the box."
-    #        elif not self.guideTargetVariable.get():
-    #            print "Please enter a target for guiding"
-    #        else:
-    #            gfls = self.checkGuideVariable()
-    #            guidingstuff = WG.wifis_simple_guiding_setup(self.telSock, self.cam, \
-    #                int(self.guideExpVariable.get()),gfls)
-    #            self.startGuiding(guidingstuff)
-    
     def initGuiding(self):
         if self.telSock:
             self.deltRA = 0
@@ -476,7 +466,7 @@ class FLIApplication(_tk.Frame):
                 return
             elif not self.guidingOnVariable.get():
                 self.guidingOnVariable.set(1)
-                print "###### STARTING GUIDING ######"
+                print "###### STARTING GUIDING ON %s ######" % (self.guideTargetVariable.get())
                 self.guideButtonVar.set("Stop Guiding")
                 gfls = self.checkGuideVariable()
                 guidingstuff = WG.wifis_simple_guiding_setup(self.telSock, self.cam, \
@@ -487,14 +477,14 @@ class FLIApplication(_tk.Frame):
     def startGuiding(self, guidingstuff):
         if self.telSock:
             if not self.guidingOnVariable.get():
+                print "###### STOPPING GUIDING ######"
                 self.cam.end_exposure()
                 self.guideButtonVar.set("Start Guiding")
                 print "###### FINISHED GUIDING ######"
                 return
             else:
                 try:
-                    dRA, dDEC = WG.run_guiding(guidingstuff, \
-                        self.parent, self.cam, self.telSock)
+                    dRA, dDEC = WG.run_guiding(guidingstuff, self.cam, self.telSock)
                     self.deltRA += dRA
                     self.deltDEC += dDEC
                     print "DELTRA:\t\t%f\nDELTDEC:\t%f\n" % (self.deltRA, self.deltDEC)
@@ -508,8 +498,21 @@ class FLIApplication(_tk.Frame):
         if self.telSock:
             if self.guidingOnVariable.get():
                 self.guidingOnVariable.set(0)
-                self.after(4000, self.moveTelescope)
-                self.after(4000, self.initGuiding)
+                time.sleep(4)
+                gtv = self.guideTargetVariable.get()
+                if gtv[-3:] != 'Sky':
+                    self.moveTelescope()
+                    time.sleep(3)
+                    self.guideTargetVariable.set(gtv+'Sky')
+                elif gtv[-3:] == 'Sky':
+                    ra = self.raAdjVariable.get()
+                    dec = self.decAdjVariable.get()
+                    self.raAdjVariable.set(-1.0*float(ra))
+                    self.decAdjVariable.set(-1.0*float(dec))
+                    self.moveTelescope()
+                    time.sleep(3)
+                    self.guideTargetVariable.set(gtv[:-3])
+                self.initGuiding()
             else:
                 return
 
@@ -527,6 +530,7 @@ class FLIApplication(_tk.Frame):
                 
     def offsetToGuider(self):
         if self.telSock:
+            print "### OFFSETTING TO GUIDER FIELD ###"
             offsets, x_rot, y_rot = WG.get_rotation_solution(self.telSock)
             WG.move_telescope(self.telSock, offsets[0], offsets[1]) 
             #self.offsetButton.configure(text='Move to WIFIS',\
@@ -535,6 +539,7 @@ class FLIApplication(_tk.Frame):
 
     def offsetToWIFIS(self):
         if self.telSock:
+            print "### OFFSETTING TO WIFIS FIELD ###"
             offsets, x_rot, y_rot = WG.get_rotation_solution(self.telSock)
             WG.move_telescope(self.telSock, -1.0*offsets[0], -1.0*offsets[1])
             #self.offsetButton.configure(text='Move to Guider',\
@@ -654,13 +659,37 @@ class FLIApplication(_tk.Frame):
             fig = mpl.figure()
             ax = fig.add_subplot(1,1,1)
 
-            norm = ImageNormalize(img, interval=PercentileInterval(99.5), stretch=LinearStretch())
+            norm = ImageNormalize(img, interval=PercentileInterval(99.9), stretch=LinearStretch())
             #norm = ImageNormalize(img,  stretch=LinearStretch())
             
             im = ax.imshow(img, interpolation='none', norm= norm, cmap='gray', origin='lower')
             ax.format_coord = Formatter(im)
             fig.colorbar(im)
             mpl.show()
+
+    def takeImage(self):
+        if self.cam and self.foc:
+            if self.imgtypeVariable.get() == 'Dark':
+                self.cam.end_exposure()
+                self.cam.set_exposure(int(self.entryExpVariable.get()), frametype='dark')
+                img = self.cam.take_photo()  
+                self.cam.set_exposure(int(self.entryExpVariable.get()), frametype='normal')
+            else:
+                self.cam.end_exposure()
+                self.cam.set_exposure(int(self.entryExpVariable.get()), frametype='normal')
+                img = self.cam.take_photo()  
+   
+            mpl.close()
+            fig = mpl.figure()
+            ax = fig.add_subplot(1,1,1)
+            
+            norm = ImageNormalize(img, interval=PercentileInterval(99.9), stretch=LinearStretch())
+
+            im = ax.imshow(img, interpolation='none', norm= norm, cmap='gray', origin='lower')
+            ax.format_coord = Formatter(im)
+            fig.colorbar(im)
+            mpl.show()
+        return img
 
     def makeHeader(self, telemDict):
 
@@ -689,29 +718,6 @@ class FLIApplication(_tk.Frame):
             self.ccdTempText.set(str(self.cam.get_temperature()))
             self.after(1000,self.getCCDTemp)        
     
-    def takeImage(self):
-        if self.cam and self.foc:
-            if self.imgtypeVariable.get() == 'Dark':
-                self.cam.end_exposure()
-                self.cam.set_exposure(int(self.entryExpVariable.get()), frametype='dark')
-                img = self.cam.take_photo()  
-                self.cam.set_exposure(int(self.entryExpVariable.get()), frametype='normal')
-            else:
-                self.cam.end_exposure()
-                self.cam.set_exposure(int(self.entryExpVariable.get()), frametype='normal')
-                img = self.cam.take_photo()  
-   
-            mpl.close()
-            fig = mpl.figure()
-            ax = fig.add_subplot(1,1,1)
-            
-            norm = ImageNormalize(img, interval=PercentileInterval(99.5), stretch=LinearStretch())
-
-            im = ax.imshow(img, interpolation='none', norm= norm, cmap='gray', origin='lower')
-            ax.format_coord = Formatter(im)
-            fig.colorbar(im)
-            mpl.show()
-        return img
 
     def checkCentroids(self, auto=False):
         if self.cam and self.foc:
@@ -786,8 +792,11 @@ class FLIApplication(_tk.Frame):
         mpl.ion()
         fig, ax = mpl.subplots(1,1)
        
+        bx = int(bx)
+        by = int(by)
         imgplot = ax.imshow(img[bx-20:bx+20,by-20:by+20], interpolation = 'none', origin='lower')
         fig.canvas.draw()
+
         while step > 5:
             self.foc.step_motor(direc*step)
             img = self.cam.take_photo()
@@ -818,7 +827,61 @@ class FLIApplication(_tk.Frame):
             current_focus = self.foc.get_stepper_position() 
         
         print "### FINISHED FOCUSING ####"
+        
+class RunGuiding(QThread):
 
+    def __init__(self, telsock, cam, guideTargetVar, guideExpVariable):
+        QThread.__init__(self)
+        self.telsock = telsock
+        #self.guideButtonVar = guideButonVar
+        self.guideTargetVar = guideTargetVar
+        self.guideExpVariable = guideExpVariable
+        self.cam = cam
+        self.deltRA = 0
+        self.deltDEC = 0
+        self.stopThread = False
+
+    def __del__(self):
+        self.wait()
+
+    def stop(self):
+        self.stopThread = True
+
+    def run(self):
+        print "###### STARTING GUIDING ON %s ######" % (self.guideTargetVar)
+        #self.guideButtonVar.set("Stop Guiding")
+        gfls = self.checkGuideVariable()
+        guidingstuff = WG.wifis_simple_guiding_setup(self.telsock, self.cam, \
+            int(self.guideExpVariable),gfls)
+
+        while True:
+            if self.stopThread:
+                self.cam.end_exposure()
+                print "###### FINISHED GUIDING ######"
+                break
+            else:
+                try:
+                    dRA, dDEC = WG.run_guiding(guidingstuff,  self.cam, self.telsock)
+                    self.deltRA += dRA
+                    self.deltDEC += dDEC
+                    print "DELTRA:\t\t%f\nDELTDEC:\t%f\n" % (self.deltRA, self.deltDEC)
+                except Exception as e:
+                    print e
+                    print "SOMETHING WENT WRONG... CONTINUING"
+                    pass
+
+    def checkGuideVariable(self):
+        gfl = '/home/utopea/elliot/guidefiles/'+time.strftime('%Y%m%d')+'_'+self.guideTargetVar+'.txt'
+        guidefls = glob('/home/utopea/elliot/guidefiles/*.txt')
+        if self.guideTargetVar == '':
+            return '', False
+        if gfl not in guidefls:
+            print "OBJECT NOT OBSERVED, INITIALIZING GUIDE STAR"
+            return gfl, False
+        else:
+            print "OBJECT ALREADY OBSERVED, USING ORIGINAL GUIDE STAR"
+            return gfl, True
+    
 def run_fli_gui_standalone():
 
     root = _tk.Tk()
