@@ -32,7 +32,7 @@ def centroid_finder(img, plot = False, verbose=False):
     #find bright pixels
     imgmean = np.mean(img)
     imgstd = np.std(img)
-    nstd = 5
+    nstd = 4.
 
     if verbose:
         print "IMG MEAN: %f\nIMGSTD: %f\nCUTOFF: %f" % (imgmean, imgstd,imgmean+nstd*imgstd)

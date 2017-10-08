@@ -15,8 +15,9 @@ from sys import exit
 from PyQt5.QtCore import QThread
 
 plate_scale = 0.29125
-guideroffsets = np.array([-5.54,361.37])
+guideroffsets = np.array([-7.74,361.37])
 
+#Aug/Sept guideroffsets = np.array([-5.54,361.37])
 #June 2017 -4.0,414.1
 #May 2017 -6.0, 424.1
 
@@ -133,10 +134,9 @@ def query_telescope(telSock, reqString, verbose=True, telem=False):
 def get_telemetry(telSock, verbose=True):
     """Inititates connection to telescope and gets all telemetry data"""
 
-    if verbose:
-        reqString = "%s TCS %i REQUEST ALL" % (TELID, REF_NUM)
+    reqString = "%s TCS %i REQUEST ALL" % (TELID, REF_NUM)
 
-    cleanResp = query_telescope(telSock, reqString, telem=True)
+    cleanResp = query_telescope(telSock, reqString, telem=True, verbose=verbose)
     #gather the telemetry into a dict
     telemDict = {}
     II = 0
@@ -371,7 +371,7 @@ def wifis_simple_guiding_setup(telSock, cam, exptime, gfls):
         starx1, stary1 = findguidestar(img1,gfls)
     
     #Make sure were guiding on an actual star. If not maybe change the exptime for guiding.
-    check_guidestar = True
+    check_guidestar = False
     if check_guidestar:
         img2 = cam.take_photo()
         starybox = int(stary1)
@@ -390,7 +390,8 @@ def findguidestar(img1, gfls):
     #check positions of stars    
     centroidx, centroidy, Iarr, Isat, width = WA.centroid_finder(img1, plot=False)
     bright_stars = np.argsort(Iarr)[::-1]
-
+    print Iarr
+    print Isat
     #Choose the brightest non-saturated star for guiding
     guiding_star = bright_stars[0]
     for star in bright_stars:

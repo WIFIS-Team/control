@@ -101,11 +101,14 @@ def measure_focus(img, sideregions = 3, fitwidth = 10, plot=False, verbose=False
                     mpl.plot(cy,cx, 'rx')
                     mpl.show()
 
-                popt, pcov = WA.gaussian_fit(xs, star_x, [30000., 3.0, 10.0])
-                starsx = np.append(starsx,popt[1])
-                popt, pcov = WA.gaussian_fit(xs, star_y, [30000., 3.0, 10.0])
-                starsy = np.append(starsy,popt[1])
-    
+                try:
+
+                    popt, pcov = WA.gaussian_fit(xs, star_x, [30000., 3.0, 10.0])
+                    starsx = np.append(starsx,popt[1])
+                    popt, pcov = WA.gaussian_fit(xs, star_y, [30000., 3.0, 10.0])
+                    starsy = np.append(starsy,popt[1])
+                except:
+                    continue
     xavg = np.mean(starsx)
     yavg = np.mean(starsy)
 
@@ -345,13 +348,16 @@ class FLIApplication(_tk.Frame):
             command=self.moveTelescope).grid(column=4, row=1, sticky='EW')
 
         _tk.Button(self, text=u'Print Telemetry',\
-            command=self.printTelemetry).grid(column=4, row=4, sticky='EW')    
+            command=self.printTelemetry).grid(column=5, row=8, sticky='EW')    
 
         self.guideButton = _tk.Button(self, textvariable=self.guideButtonVar,\
-            command=self.initGuiding).grid(column=5, row=3, sticky='EW')
-
-        self.skyMoveButton = _tk.Button(self, text=u'Sky Move',\
-                command=self.skyMove).grid(column=6, row=3, sticky='EW')
+            command=self.sourceGuiding).grid(column=5, row=3, sticky='EW')
+        
+        self.skyguideButton = _tk.Button(self, text='Sky Guiding',\
+            command=self.skyGuiding).grid(column=6, row=3, sticky='EW')
+ 
+        self.skyMoveButton = _tk.Button(self, text=u'Move Back',\
+                command=self.skyMove).grid(column=4, row=2, sticky='EW')
 
         self.guidingOnVariable = _tk.IntVar()
         self.guidingOnVariable.set(0)
@@ -396,14 +402,14 @@ class FLIApplication(_tk.Frame):
 
         self.offsetButton = _tk.Button(self, text=u'Move to Guider',\
             command=self.offsetToGuider)
-        self.offsetButton.grid(column=4, row=2, sticky='EW')
+        self.offsetButton.grid(column=4, row=3, sticky='EW')
 
         self.offsetButton = _tk.Button(self, text=u'Move to WIFIS',\
             command=self.offsetToWIFIS)
-        self.offsetButton.grid(column=4, row=3, sticky='EW')
+        self.offsetButton.grid(column=4, row=4, sticky='EW')
 
-        self.offsetAutoButton = _tk.Button(self, text=u'Corr Offset',\
-            command=self.brightStarCorrect).grid(column=4, row=5, sticky='EW')
+        #self.offsetAutoButton = _tk.Button(self, text=u'Corr Offset',\
+        #    command=self.brightStarCorrect).grid(column=4, row=5, sticky='EW')
 
         label = _tk.Label(self, text='X Offset:',\
             anchor="center", fg = "black",font=("Helvetica", 12)).grid(column=5,row=6, sticky='EW')
@@ -420,7 +426,7 @@ class FLIApplication(_tk.Frame):
             textvariable=self.yOffsetVar).grid(column=6, row=7, sticky='EW')
 
         self.calcmov = _tk.Button(self, text=u'Calc Offset',\
-            command=self.calcOffset).grid(column=4, row=6, sticky='EW')
+            command=self.calcOffset).grid(column=6, row=8, sticky='EW')
 
         
     ## Functions to perform the above actions ##
@@ -456,6 +462,20 @@ class FLIApplication(_tk.Frame):
                 time.sleep(4)
             WG.move_telescope(self.telSock,float(self.raAdjVariable.get()), \
                 float(self.decAdjVariable.get()))
+
+    def skyGuiding(self):
+        if self.telSock:
+            gt = self.guideTargetVariable.get()
+            if gt[-3:] != 'Sky':
+                self.guideTargetVariable.set(gt + 'Sky')
+            self.initGuiding()
+    
+    def sourceGuiding(self):
+        if self.telSock:
+            gt = self.guideTargetVariable.get()
+            if gt[-3:] == 'Sky':
+                self.guideTargetVariable.set(gt[:-3])
+            self.initGuiding()
 
     def initGuiding(self):
         if self.telSock:
@@ -496,25 +516,8 @@ class FLIApplication(_tk.Frame):
 
     def skyMove(self):
         if self.telSock:
-            if self.guidingOnVariable.get():
-                self.guidingOnVariable.set(0)
-                time.sleep(4)
-                gtv = self.guideTargetVariable.get()
-                if gtv[-3:] != 'Sky':
-                    self.moveTelescope()
-                    time.sleep(3)
-                    self.guideTargetVariable.set(gtv+'Sky')
-                elif gtv[-3:] == 'Sky':
-                    ra = self.raAdjVariable.get()
-                    dec = self.decAdjVariable.get()
-                    self.raAdjVariable.set(-1.0*float(ra))
-                    self.decAdjVariable.set(-1.0*float(dec))
-                    self.moveTelescope()
-                    time.sleep(3)
-                    self.guideTargetVariable.set(gtv[:-3])
-                self.initGuiding()
-            else:
-                return
+            WG.move_telescope(self.telSock,-1.*float(self.raAdjVariable.get()), \
+                -1.*float(self.decAdjVariable.get()))
 
     def checkGuideVariable(self):
         gfl = '/home/utopea/elliot/guidefiles/'+time.strftime('%Y%m%d')+'_'+self.guideTargetVariable.get()+'.txt'
@@ -731,6 +734,7 @@ class FLIApplication(_tk.Frame):
                 self.cam.set_exposure(int(self.entryExpVariable.get()), frametype='normal')
                 img = self.cam.take_photo()  
             
+            print "#### Measuring centroids of stars ####"
             offsets, x_rot, y_rot = WG.get_rotation_solution(self.telSock)
             
             centroids = WA.centroid_finder(img)
