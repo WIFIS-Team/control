@@ -1,6 +1,6 @@
-# Control Code
+# WIFIS Control Code
 
-DEPRECIATED FOR THE wifiscontrol REPOSITORY
+**DEPRECIATED FOR THE wifiscontrol REPOSITORY**
 
 A repository for all scripts related to controlling WIFIS as well as for data handling.
 
